@@ -1,5 +1,5 @@
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   preferences?: UserPreferences;
@@ -13,20 +13,20 @@ export interface UserPreferences {
 }
 
 export interface Destination {
-  id: string;
+  id: number;
   name: string;
   country: string;
-  coordinates: {
-    lat: number;
-    lng: number;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
   };
   description: string;
   imageUrl?: string;
 }
 
 export interface Trip {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   name: string;
   startDate: string;
   endDate: string;

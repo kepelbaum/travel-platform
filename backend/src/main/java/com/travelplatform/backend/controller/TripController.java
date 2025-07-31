@@ -30,6 +30,19 @@ public class TripController {
         return ResponseEntity.ok(createdTrip);
     }
 
+    @PostMapping("/{tripId}/destinations/{destinationId}")
+    public ResponseEntity<Trip> addDestinationToTrip(
+            @PathVariable Long tripId,
+            @PathVariable Long destinationId,
+            @RequestParam Long userId) {
+        try {
+            Trip updatedTrip = tripService.addDestinationToTrip(tripId, destinationId, userId);
+            return ResponseEntity.ok(updatedTrip);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Trip> getTripById(@PathVariable Long id, @RequestParam Long userId) {
         // TODO: Extract userId from JWT token instead of RequestParam
@@ -60,6 +73,19 @@ public class TripController {
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{tripId}/destinations/{destinationId}")
+    public ResponseEntity<Trip> removeDestinationFromTrip(
+            @PathVariable Long tripId,
+            @PathVariable Long destinationId,
+            @RequestParam Long userId) {
+        try {
+            Trip updatedTrip = tripService.removeDestinationFromTrip(tripId, destinationId, userId);
+            return ResponseEntity.ok(updatedTrip);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

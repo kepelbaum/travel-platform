@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ReactQueryProvider } from '@/lib/react-query';
+import { AuthInitializer } from '@/components/auth/AuthInitializer';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic', 'latin-ext'] });
 
@@ -24,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+        <ReactQueryProvider>
+          <AuthInitializer>{children}</AuthInitializer>
+        </ReactQueryProvider>
       </body>
     </html>
   );

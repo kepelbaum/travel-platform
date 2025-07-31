@@ -1,7 +1,9 @@
 package com.travelplatform.backend.service;
 
+import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.entity.Trip;
 import com.travelplatform.backend.entity.User;
+import com.travelplatform.backend.repository.DestinationRepository;
 import com.travelplatform.backend.repository.TripRepository;
 import com.travelplatform.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,9 @@ public class TripService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private DestinationRepository destinationRepository;
 
     public List<Trip> getUserTrips(Long userId) {
         return tripRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -56,5 +61,20 @@ public class TripService {
     public void deleteTrip(Long tripId, Long userId) {
         Trip trip = getTripById(tripId, userId);
         tripRepository.delete(trip);
+    }
+
+    public Trip addDestinationToTrip(Long tripId, Long destinationId, Long userId) {
+        Trip trip = getTripById(tripId, userId); // Reuse existing method
+        Destination destination = destinationRepository.findById(destinationId)
+                .orElseThrow(() -> new RuntimeException("Destination not found"));
+
+        trip.getDestinations().add(destination);
+        return tripRepository.save(trip);
+    }
+
+    public Trip removeDestinationFromTrip(Long tripId, Long destinationId, Long userId) {
+        Trip trip = getTripById(tripId, userId); // Reuse existing method
+        trip.getDestinations().removeIf(dest -> dest.getId().equals(destinationId));
+        return tripRepository.save(trip);
     }
 }

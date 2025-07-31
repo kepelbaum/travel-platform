@@ -1,5 +1,6 @@
 package com.travelplatform.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
@@ -32,6 +33,7 @@ public class Destination {
     private String imageUrl;
 
     @ManyToMany(mappedBy = "destinations")
+    @JsonIgnore
     private List<Trip> trips;
 
     public Destination() {}

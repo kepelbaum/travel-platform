@@ -1,5 +1,6 @@
 package com.travelplatform.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,9 +35,10 @@ public class Trip {
 
     @Enumerated(EnumType.STRING)
     private TripStatus status = TripStatus.DRAFT;
-
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     @ManyToMany
