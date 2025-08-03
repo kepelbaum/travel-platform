@@ -1,10 +1,12 @@
 package com.travelplatform.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -36,6 +38,16 @@ public class Destination {
     @JsonIgnore
     private List<Trip> trips;
 
+    @Column(name = "place_id")
+    private String placeId;
+
+    @Column(precision = 3, scale = 2)
+    private BigDecimal rating;
+
+    @OneToMany(mappedBy = "destination", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Activity> activities = new ArrayList<>();
+
     public Destination() {}
 
     public Long getId() { return id; }
@@ -61,4 +73,25 @@ public class Destination {
 
     public List<Trip> getTrips() { return trips; }
     public void setTrips(List<Trip> trips) { this.trips = trips; }
+
+    public String getPlaceId() { return placeId; }
+    public void setPlaceId(String placeId) { this.placeId = placeId; }
+
+    public BigDecimal getRating() { return rating; }
+    public void setRating(BigDecimal rating) { this.rating = rating; }
+
+    public List<Activity> getActivities() { return activities; }
+    public void setActivities(List<Activity> activities) { this.activities = activities; }
+
+    public void addActivity(Activity activity) {
+        activities.add(activity);
+        activity.setDestination(this);
+    }
+
+    public void removeActivity(Activity activity) {
+        activities.remove(activity);
+        activity.setDestination(null);
+    }
 }
+
+

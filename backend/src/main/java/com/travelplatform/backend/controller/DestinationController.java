@@ -1,6 +1,7 @@
 package com.travelplatform.backend.controller;
 
 import com.travelplatform.backend.entity.Destination;
+import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.repository.DestinationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,9 @@ public class DestinationController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Destination> getDestinationById(@PathVariable Long id) {
-        return destinationRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Destination destination = destinationRepository.findById(id)
+                .orElseThrow(() -> new DestinationNotFoundException(id));
+        return ResponseEntity.ok(destination);
     }
 
     @GetMapping("/search")

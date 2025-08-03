@@ -35,45 +35,29 @@ public class TripController {
             @PathVariable Long tripId,
             @PathVariable Long destinationId,
             @RequestParam Long userId) {
-        try {
-            Trip updatedTrip = tripService.addDestinationToTrip(tripId, destinationId, userId);
-            return ResponseEntity.ok(updatedTrip);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Trip updatedTrip = tripService.addDestinationToTrip(tripId, destinationId, userId);
+        return ResponseEntity.ok(updatedTrip);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Trip> getTripById(@PathVariable Long id, @RequestParam Long userId) {
         // TODO: Extract userId from JWT token instead of RequestParam
-        try {
-            Trip trip = tripService.getTripById(id, userId);
-            return ResponseEntity.ok(trip);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        Trip trip = tripService.getTripById(id, userId);
+        return ResponseEntity.ok(trip);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Trip> updateTrip(@PathVariable Long id, @Valid @RequestBody Trip trip, @RequestParam Long userId) {
         // TODO: Extract userId from JWT token instead of RequestParam
-        try {
-            Trip updatedTrip = tripService.updateTrip(id, trip, userId);
-            return ResponseEntity.ok(updatedTrip);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Trip updatedTrip = tripService.updateTrip(id, trip, userId);
+        return ResponseEntity.ok(updatedTrip);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTrip(@PathVariable Long id, @RequestParam Long userId) {
         // TODO: Extract userId from JWT token instead of RequestParam
-        try {
-            tripService.deleteTrip(id, userId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        tripService.deleteTrip(id, userId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{tripId}/destinations/{destinationId}")
@@ -81,11 +65,7 @@ public class TripController {
             @PathVariable Long tripId,
             @PathVariable Long destinationId,
             @RequestParam Long userId) {
-        try {
-            Trip updatedTrip = tripService.removeDestinationFromTrip(tripId, destinationId, userId);
-            return ResponseEntity.ok(updatedTrip);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Trip updatedTrip = tripService.removeDestinationFromTrip(tripId, destinationId, userId);
+        return ResponseEntity.ok(updatedTrip);
     }
 }
