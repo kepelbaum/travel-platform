@@ -8,10 +8,13 @@ import { useMemo } from 'react';
 import { DestinationCard } from './DestinationCard';
 import { useTripPlanningStore } from '@/store/tripPlanning';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function DestinationList() {
   const [searchQuery, setSearchQuery] = useState('');
   const { activeTrip, clearActiveTrip } = useTripPlanningStore();
+
+  const router = useRouter();
 
   const { data: allDestinations = [], isLoading } = useQuery({
     queryKey: ['destinations', 'all'],
@@ -67,7 +70,10 @@ export default function DestinationList() {
                 View Trip
               </Link>
               <button
-                onClick={() => clearActiveTrip()}
+                onClick={() => {
+                  clearActiveTrip();
+                  router.push('/dashboard');
+                }}
                 className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 Back to Trips

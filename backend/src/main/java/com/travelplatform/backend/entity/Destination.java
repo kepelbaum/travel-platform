@@ -1,7 +1,6 @@
 package com.travelplatform.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
@@ -45,7 +44,7 @@ public class Destination {
     private BigDecimal rating;
 
     @OneToMany(mappedBy = "destination", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonIgnore
     private List<Activity> activities = new ArrayList<>();
 
     public Destination() {}

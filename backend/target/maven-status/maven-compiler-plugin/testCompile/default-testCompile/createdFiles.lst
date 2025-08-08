@@ -1,0 +1,8 @@
+com/travelplatform/backend/repository/TripActivityControllerTest.class
+com/travelplatform/backend/TravelPlatformApplicationTests.class
+com/travelplatform/backend/repository/TripActivityRepositoryTest.class
+com/travelplatform/backend/repository/TripActivityServiceTest.class
+com/travelplatform/backend/repository/UserRepositoryTest.class
+com/travelplatform/backend/repository/ActivityRepositoryTest.class
+com/travelplatform/backend/repository/ActivityControllerTest.class
+com/travelplatform/backend/repository/ActivityServiceTest.class

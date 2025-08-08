@@ -24,6 +24,7 @@ public class TripActivity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)
+    @JsonIgnore
     private Activity activity;
 
     @NotNull(message = "Planned date is required")

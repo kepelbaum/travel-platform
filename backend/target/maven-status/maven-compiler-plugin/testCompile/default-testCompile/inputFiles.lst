@@ -1,0 +1,8 @@
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/TravelPlatformApplicationTests.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/ActivityControllerTest.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/ActivityRepositoryTest.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/ActivityServiceTest.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/TripActivityControllerTest.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/TripActivityRepositoryTest.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/TripActivityServiceTest.java
+/home/kepelbaum/repos/travel-platform/backend/src/test/java/com/travelplatform/backend/repository/UserRepositoryTest.java
