@@ -17,6 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -66,7 +67,7 @@ class ActivityServiceTest {
         Activity result = activityService.createCustomActivity(1L, "Test Museum", "museum", null, null, "A test museum");
 
         assertThat(result.getDurationMinutes()).isEqualTo(180); // Museum default
-        assertThat(result.getCostEstimate()).isEqualTo(1500); // Museum default cost
+        assertEquals(1500.0, result.getEstimatedCost()); // Museum default cost
         assertThat(result.getIsCustom()).isTrue();
         verify(activityRepository).save(any(Activity.class));
     }
@@ -76,10 +77,10 @@ class ActivityServiceTest {
         when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
         when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Activity result = activityService.createCustomActivity(1L, "Custom Activity", "custom", 240, 5000, "Custom description");
+        Activity result = activityService.createCustomActivity(1L, "Custom Activity", "custom", 240, 5000.0, "Custom description");
 
         assertThat(result.getDurationMinutes()).isEqualTo(240);
-        assertThat(result.getCostEstimate()).isEqualTo(5000);
+        assertEquals(5000.0, result.getEstimatedCost());
         assertThat(result.getDescription()).isEqualTo("Custom description");
     }
 
@@ -103,7 +104,7 @@ class ActivityServiceTest {
         Activity result = activityService.createFromGooglePlaces(1L, "place123", "Restaurant XYZ", "restaurant", "Great food");
 
         assertThat(result.getDurationMinutes()).isEqualTo(90); // Restaurant default
-        assertThat(result.getCostEstimate()).isEqualTo(3000); // Restaurant default cost
+        assertEquals(3000.0, result.getEstimatedCost()); // Restaurant default cost
         assertThat(result.getIsCustom()).isFalse();
         assertThat(result.getPlaceId()).isEqualTo("place123");
     }
@@ -125,13 +126,13 @@ class ActivityServiceTest {
         when(activityRepository.findById(1L)).thenReturn(Optional.of(testActivity));
         when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Activity result = activityService.updateActivity(1L, "Updated Name", "Updated desc", "museum", 200, 2500);
+        Activity result = activityService.updateActivity(1L, "Updated Name", "Updated desc", "museum", 200, 2500.0);
 
         assertThat(result.getName()).isEqualTo("Updated Name");
         assertThat(result.getDescription()).isEqualTo("Updated desc");
         assertThat(result.getCategory()).isEqualTo("museum");
         assertThat(result.getDurationMinutes()).isEqualTo(200);
-        assertThat(result.getCostEstimate()).isEqualTo(2500);
+        assertEquals(2500.0, result.getEstimatedCost());
     }
 
     @Test

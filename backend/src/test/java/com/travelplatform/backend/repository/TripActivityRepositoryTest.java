@@ -304,9 +304,9 @@ public class TripActivityRepositoryTest {
         paris = destinationRepository.save(paris);
 
         Activity expensive = new Activity("Expensive Activity", "attraction", paris);
-        expensive.setCostEstimate(5000);
+        expensive.setEstimatedCost(5000.0);
         Activity cheap = new Activity("Cheap Activity", "museum", paris);
-        cheap.setCostEstimate(1500);
+        cheap.setEstimatedCost(1500.0);
 
         expensive = activityRepository.save(expensive);
         cheap = activityRepository.save(cheap);

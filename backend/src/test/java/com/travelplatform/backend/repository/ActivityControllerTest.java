@@ -51,7 +51,7 @@ class ActivityControllerTest {
         testActivity = new Activity("Eiffel Tower", "tourist_attraction", testDestination);
         testActivity.setId(1L);
         testActivity.setDurationMinutes(120);
-        testActivity.setCostEstimate(2000);
+        testActivity.setEstimatedCost(2000.0);
     }
 
     @Test
@@ -108,18 +108,23 @@ class ActivityControllerTest {
 
     @Test
     void createCustomActivity_ReturnsCreatedWithActivity() throws Exception {
-        when(activityService.createCustomActivity(eq(1L), eq("Museum"), eq("museum"), eq(180), eq(1500), eq("Great museum")))
-                .thenReturn(testActivity);
+        Activity museumActivity = new Activity("Museum", "museum", testDestination);
+        museumActivity.setId(2L);
+        museumActivity.setDurationMinutes(180);
+        museumActivity.setEstimatedCost(1500.0);
+
+        when(activityService.createCustomActivity(eq(1L), eq("Museum"), eq("museum"), eq(180), eq(1500.0), eq("Great museum")))
+                .thenReturn(museumActivity);
 
         mockMvc.perform(post("/api/activities/destination/1/custom")
                         .param("name", "Museum")
                         .param("category", "museum")
                         .param("durationMinutes", "180")
-                        .param("costEstimate", "1500")
+                        .param("estimatedCost", "1500.0")
                         .param("description", "Great museum"))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Eiffel Tower"));
+                .andExpect(jsonPath("$.name").value("Museum"));
     }
 
     @Test

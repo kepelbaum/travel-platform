@@ -2,20 +2,29 @@ package com.travelplatform.backend.controller;
 
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.service.ActivityService;
+import com.travelplatform.backend.service.GooglePlacesService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/activities")
+@RequestMapping("/api/activities")  
 public class ActivityController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ActivityController.class);
 
     @Autowired
     private ActivityService activityService;
+
+    @Autowired
+    private GooglePlacesService googlePlacesService;
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleActivityNotFound(RuntimeException ex) {
@@ -50,9 +59,27 @@ public class ActivityController {
     @GetMapping("/{id}")
     public ResponseEntity<Activity> getActivityById(@PathVariable Long id) {
         try {
-            Optional<Activity> activity = activityService.getActivityById(id);
-            return activity.map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+            Optional<Activity> activityOpt = activityService.getActivityById(id);
+            if (activityOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Activity activity = activityOpt.get();
+
+            // If we have a placeId but missing some data, enhance with Places API
+            if (activity.getPlaceId() != null && shouldEnhanceActivity(activity)) {
+                try {
+                    Activity enhancedActivity = googlePlacesService.getPlaceDetails(activity.getPlaceId());
+                    if (enhancedActivity != null) {
+                        activity = activityService.enhanceActivityWithPlacesData(activity, enhancedActivity);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to enhance activity {} with Places data", id, e);
+                    // Continue with original activity data
+                }
+            }
+
+            return ResponseEntity.ok(activity);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -99,17 +126,12 @@ public class ActivityController {
             @RequestParam String name,
             @RequestParam String category,
             @RequestParam(required = false) Integer durationMinutes,
-            @RequestParam(required = false) Integer costEstimate,
+            @RequestParam(required = false) Double estimatedCost,
             @RequestParam(required = false) String description) {
-        try {
-            Activity activity = activityService.createCustomActivity(
-                    destinationId, name, category, durationMinutes, costEstimate, description);
-            return ResponseEntity.status(HttpStatus.CREATED).body(activity);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+
+        Activity activity = activityService.createCustomActivity(
+                destinationId, name, category, durationMinutes, estimatedCost, description);
+        return ResponseEntity.status(HttpStatus.CREATED).body(activity);
     }
 
     @PutMapping("/{id}")
@@ -119,7 +141,7 @@ public class ActivityController {
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Integer durationMinutes,
-            @RequestParam(required = false) Integer costEstimate) {
+            @RequestParam(required = false) Double costEstimate) {
         try {
             Activity activity = activityService.updateActivity(
                     id, name, description, category, durationMinutes, costEstimate);
@@ -154,11 +176,137 @@ public class ActivityController {
         }
     }
 
+    // ========== NEW GOOGLE PLACES API ENDPOINTS ==========
+
+    /**
+     * Search for activities using Google Places API and populate database
+     */
+    @GetMapping("/destination/{destinationId}/places-search")
+    public ResponseEntity<?> searchActivitiesFromPlaces(
+            @PathVariable Long destinationId,
+            @RequestParam(required = false) String type,
+            @RequestParam(defaultValue = "false") boolean forceRefresh) {
+
+        try {
+            logger.info("Searching Google Places for activities in destination: {} with type: {}", destinationId, type);
+
+            // Check if we already have cached activities and don't need to refresh
+            if (!forceRefresh) {
+                List<Activity> cachedActivities = activityService.getActivitiesByDestination(destinationId);
+                if (!cachedActivities.isEmpty()) {
+                    logger.info("Returning {} cached activities for destination: {}", cachedActivities.size(), destinationId);
+                    return ResponseEntity.ok(Map.of(
+                            "activities", cachedActivities,
+                            "source", "cached",
+                            "count", cachedActivities.size()
+                    ));
+                }
+            }
+
+            // Fetch from Google Places API
+            List<Activity> activities = googlePlacesService.searchActivitiesForDestination(destinationId, type);
+
+            // Save new activities to database (avoid duplicates by placeId)
+            List<Activity> savedActivities = activityService.saveActivitiesFromPlaces(activities, destinationId);
+
+            logger.info("Found and saved {} activities for destination: {}", savedActivities.size(), destinationId);
+            return ResponseEntity.ok(Map.of(
+                    "activities", savedActivities,
+                    "source", "google_places",
+                    "count", savedActivities.size()
+            ));
+
+        } catch (RuntimeException e) {
+            logger.error("Error searching for activities in destination: {}", destinationId, e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error searching for activities in destination: {}", destinationId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal server error"));
+        }
+    }
+
+    /**
+     * Get activity categories available in the system
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<List<String>> getActivityCategories() {
+        try {
+            List<String> categories = activityService.getAllCategories();
+            return ResponseEntity.ok(categories);
+        } catch (Exception e) {
+            logger.error("Error getting activity categories", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Refresh a specific activity's data from Google Places
+     */
+    @PostMapping("/{id}/refresh-places-data")
+    public ResponseEntity<?> refreshActivityFromPlaces(@PathVariable Long id) {
+        try {
+            Optional<Activity> activityOpt = activityService.getActivityById(id);
+            if (activityOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Activity activity = activityOpt.get();
+            if (activity.getPlaceId() == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Activity has no Google Places ID"));
+            }
+
+            Activity enhancedActivity = googlePlacesService.getPlaceDetails(activity.getPlaceId());
+            if (enhancedActivity != null) {
+                activity = activityService.enhanceActivityWithPlacesData(activity, enhancedActivity);
+                return ResponseEntity.ok(activity);
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Could not fetch Places data"));
+            }
+
+        } catch (Exception e) {
+            logger.error("Error refreshing activity {} from Places", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal server error"));
+        }
+    }
+
+    /**
+     * Health check endpoint to test Google Places API connection
+     */
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> healthCheck() {
+        try {
+            Map<String, String> health = Map.of(
+                    "status", "healthy",
+                    "google_places_api", "configured"
+            );
+            return ResponseEntity.ok(health);
+        } catch (Exception e) {
+            logger.error("Health check failed", e);
+            Map<String, String> health = Map.of(
+                    "status", "unhealthy",
+                    "error", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(health);
+        }
+    }
+
+    /**
+     * Helper method to determine if activity needs enhancement from Places API
+     */
+    private boolean shouldEnhanceActivity(Activity activity) {
+        return activity.getPhotoUrl() == null ||
+                activity.getRating() == null ||
+                activity.getAddress() == null ||
+                activity.getOpeningHours() == null;
+    }
+
     public static class CreateCustomActivityRequest {
         private String name;
         private String category;
         private Integer durationMinutes;
-        private Integer costEstimate;
+        private Double costEstimate;
         private String description;
     }
 }

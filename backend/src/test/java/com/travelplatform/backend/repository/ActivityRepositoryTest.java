@@ -155,13 +155,13 @@ public class ActivityRepositoryTest {
         paris = destinationRepository.save(paris);
 
         Activity free = new Activity("Free Museum", "museum", paris);
-        free.setCostEstimate(0);
+        free.setEstimatedCost(0.0);
 
         Activity cheap = new Activity("Cheap Cafe", "restaurant", paris);
-        cheap.setCostEstimate(1500); // 15 euros
+        cheap.setEstimatedCost(1500.0); // 15 euros
 
         Activity expensive = new Activity("Expensive Restaurant", "restaurant", paris);
-        expensive.setCostEstimate(8000); // 80 euros
+        expensive.setEstimatedCost(8000.0); // 80 euros
 
         activityRepository.save(free);
         activityRepository.save(cheap);

@@ -28,26 +28,26 @@ public class ActivityDurationUtils {
         CATEGORY_DURATIONS.put("custom", 120);
     }
     // Default cost estimates by category (in cents)
-    private static final Map<String, Integer> CATEGORY_COSTS = new HashMap<>();
+    private static final Map<String, Double> CATEGORY_COSTS = new HashMap<>();
     static {
-        CATEGORY_COSTS.put("tourist_attraction", 2000);   // $20
-        CATEGORY_COSTS.put("museum", 1500);               // $15
-        CATEGORY_COSTS.put("restaurant", 3000);           // $30
-        CATEGORY_COSTS.put("park", 0);                    // Free
-        CATEGORY_COSTS.put("shopping_mall", 5000);        // $50 (shopping budget)
-        CATEGORY_COSTS.put("amusement_park", 5000);       // $50
-        CATEGORY_COSTS.put("zoo", 2500);                  // $25
-        CATEGORY_COSTS.put("aquarium", 2000);             // $20
-        CATEGORY_COSTS.put("church", 0);                  // Free
-        CATEGORY_COSTS.put("market", 1000);               // $10
-        CATEGORY_COSTS.put("viewpoint", 0);               // Free
-        CATEGORY_COSTS.put("beach", 0);                   // Free
-        CATEGORY_COSTS.put("hiking_trail", 0);            // Free
-        CATEGORY_COSTS.put("spa", 8000);                  // $80
-        CATEGORY_COSTS.put("nightclub", 4000);            // $40
-        CATEGORY_COSTS.put("theater", 3500);              // $35
-        CATEGORY_COSTS.put("stadium", 4000);              // $40
-        CATEGORY_COSTS.put("custom", 0);                  // User-defined
+        CATEGORY_COSTS.put("tourist_attraction", 2000.0);   // $20
+        CATEGORY_COSTS.put("museum", 1500.0);               // $15
+        CATEGORY_COSTS.put("restaurant", 3000.0);           // $30
+        CATEGORY_COSTS.put("park", 0.0);                    // Free
+        CATEGORY_COSTS.put("shopping_mall", 5000.0);        // $50 (shopping budget)
+        CATEGORY_COSTS.put("amusement_park", 5000.0);       // $50
+        CATEGORY_COSTS.put("zoo", 2500.0);                  // $25
+        CATEGORY_COSTS.put("aquarium", 2000.0);             // $20
+        CATEGORY_COSTS.put("church", 0.0);                  // Free
+        CATEGORY_COSTS.put("market", 1000.0);               // $10
+        CATEGORY_COSTS.put("viewpoint", 0.0);               // Free
+        CATEGORY_COSTS.put("beach", 0.0);                   // Free
+        CATEGORY_COSTS.put("hiking_trail", 0.0);            // Free
+        CATEGORY_COSTS.put("spa", 8000.0);                  // $80
+        CATEGORY_COSTS.put("nightclub", 4000.0);            // $40
+        CATEGORY_COSTS.put("theater", 3500.0);              // $35
+        CATEGORY_COSTS.put("stadium", 4000.0);              // $40
+        CATEGORY_COSTS.put("custom", 0.0);                  // User-defined
     }
     /**
      * Get default duration for an activity category
@@ -63,10 +63,11 @@ public class ActivityDurationUtils {
 
     /**
      * Get default cost estimate for an activity category
+     *
      * @param category The activity category
      * @return Cost estimate in cents
      */
-    public static Integer getDefaultCostEstimate(String category) {
+    public static Double getDefaultCostEstimate(String category) {
         if (category == null) {
             return CATEGORY_COSTS.get("custom");
         }
@@ -115,17 +116,10 @@ public class ActivityDurationUtils {
         }
     }
 
-    /**
-     * Format cost as human-readable string
-     * @param costCents Cost in cents
-     * @return Formatted string like "$25.00"
-     */
-    public static String formatCost(Integer costCents) {
-        if (costCents == null || costCents == 0) {
+    public static String formatCost(Double costDollars) {
+        if (costDollars == null || costDollars == 0) {
             return "Free";
         }
-
-        double dollars = costCents / 100.0;
-        return String.format("$%.2f", dollars);
+        return String.format("$%.2f", costDollars);
     }
 }

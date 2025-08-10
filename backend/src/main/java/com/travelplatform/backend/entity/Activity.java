@@ -24,16 +24,18 @@ public class Activity {
     @JsonIgnore
     private Destination destination;
 
-    @Column(name = "place_id")
+    @Column(name = "place_id", length = 500)
     private String placeId; // Google Places ID, null for custom activities
 
     @NotBlank(message = "Activity name is required")
+    @Column(length = 500)
     private String name;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
     @NotBlank(message = "Category is required")
+    @Column(length = 100)
     private String category;
 
     @Column(precision = 3, scale = 2)
@@ -42,7 +44,7 @@ public class Activity {
     @Column(name = "price_level")
     private Integer priceLevel; // 0-4 from Google Places
 
-    @Column(name = "photo_url")
+    @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;
 
     @NotNull(message = "Duration is required")
@@ -50,8 +52,11 @@ public class Activity {
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes = 120; // default 2 hours
 
-    @Column(name = "cost_estimate")
-    private Integer costEstimate = 0; // in cents
+    @Column(name = "estimated_cost")
+    private Double estimatedCost; // Estimated cost per person
+
+    @Column(name = "estimated_duration")
+    private Integer estimatedDuration; // Duration in minutes
 
     @Column(name = "is_custom", nullable = false)
     private Boolean isCustom = false;
@@ -65,8 +70,10 @@ public class Activity {
     @Column(name = "opening_hours", columnDefinition = "TEXT")
     private String openingHours; // JSON string for Google Places format
 
+    @Column(columnDefinition = "TEXT")
     private String website;
 
+    @Column(length = 100)
     private String phone;
 
     @Column(columnDefinition = "TEXT")
@@ -148,8 +155,21 @@ public class Activity {
     public Integer getDurationMinutes() { return durationMinutes; }
     public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
 
-    public Integer getCostEstimate() { return costEstimate; }
-    public void setCostEstimate(Integer costEstimate) { this.costEstimate = costEstimate; }
+    public Double getEstimatedCost() {
+        return estimatedCost;
+    }
+
+    public void setEstimatedCost(Double estimatedCost) {
+        this.estimatedCost = estimatedCost;
+    }
+
+    public Integer getEstimatedDuration() {
+        return estimatedDuration;
+    }
+
+    public void setEstimatedDuration(Integer estimatedDuration) {
+        this.estimatedDuration = estimatedDuration;
+    }
 
     public Boolean getIsCustom() { return isCustom; }
     public void setIsCustom(Boolean isCustom) { this.isCustom = isCustom; }

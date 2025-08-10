@@ -68,7 +68,7 @@ class TripActivityControllerTest {
         testActivity = new Activity("Eiffel Tower", "tourist_attraction", testDestination);
         testActivity.setId(1L);
         testActivity.setDurationMinutes(120);
-        testActivity.setCostEstimate(2000);
+        testActivity.setEstimatedCost(2000.0);
 
         testTrip = new Trip();
         testTrip.setId(1L);

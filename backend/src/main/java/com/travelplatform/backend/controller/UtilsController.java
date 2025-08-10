@@ -25,7 +25,7 @@ public class UtilsController {
         }
 
         Integer duration = ActivityDurationUtils.getDefaultDuration(category);
-        Integer cost = ActivityDurationUtils.getDefaultCostEstimate(category);
+        Double cost = ActivityDurationUtils.getDefaultCostEstimate(category);
 
         Map<String, Object> defaults = Map.of(
                 "category", category,
@@ -44,10 +44,10 @@ public class UtilsController {
         return ResponseEntity.ok(Map.of("formatted", formatted, "minutes", minutes.toString()));
     }
 
-    @GetMapping("/format/cost/{cents}")
-    public ResponseEntity<Map<String, String>> formatCost(@PathVariable Integer cents) {
-        String formatted = ActivityDurationUtils.formatCost(cents);
-        return ResponseEntity.ok(Map.of("formatted", formatted, "cents", cents.toString()));
+    @GetMapping("/format/cost/{dollars}")
+    public ResponseEntity<Map<String, String>> formatCost(@PathVariable Double dollars) {
+        String formatted = ActivityDurationUtils.formatCost(dollars);
+        return ResponseEntity.ok(Map.of("formatted", formatted, "dollars", dollars.toString()));
     }
 
     @GetMapping("/categories/{category}/validate")
