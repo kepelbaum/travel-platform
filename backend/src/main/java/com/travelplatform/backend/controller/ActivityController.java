@@ -302,11 +302,73 @@ public class ActivityController {
                 activity.getOpeningHours() == null;
     }
 
+    /**
+     * Force refresh activities from Google Places API (bypasses cache)
+     */
+    @PostMapping("/destination/{destinationId}/refresh")
+    public ResponseEntity<Map<String, Object>> forceRefreshActivities(@PathVariable Long destinationId) {
+        try {
+            logger.info("Force refreshing activities for destination: {}", destinationId);
+
+            List<Activity> activities = activityService.forceRefreshActivities(destinationId);
+
+            return ResponseEntity.ok(Map.of(
+                    "activities", activities,
+                    "count", activities.size(),
+                    "source", "google_places_refreshed",
+                    "message", "Cache cleared and refreshed from Google Places API"
+            ));
+        } catch (Exception e) {
+            logger.error("Error force refreshing activities for destination: {}", destinationId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to refresh activities"));
+        }
+    }
+
+    /**
+     * Get cache statistics for monitoring and debugging
+     */
+    @GetMapping("/destination/{destinationId}/cache-stats")
+    public ResponseEntity<ActivityService.CacheStats> getCacheStats(@PathVariable Long destinationId) {
+        try {
+            ActivityService.CacheStats stats = activityService.getCacheStats(destinationId);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            logger.error("Error getting cache stats for destination: {}", destinationId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     public static class CreateCustomActivityRequest {
         private String name;
         private String category;
         private Integer durationMinutes;
         private Double costEstimate;
         private String description;
+    }
+
+    @GetMapping("/destination/{destinationId}/smart")
+    public ResponseEntity<Map<String, Object>> getActivitiesWithSmartCaching(@PathVariable Long destinationId) {
+        try {
+            List<Activity> activities = activityService.getActivitiesByDestination(destinationId);
+
+            // Get cache stats for response metadata
+            ActivityService.CacheStats stats = activityService.getCacheStats(destinationId);
+
+            return ResponseEntity.ok(Map.of(
+                    "activities", activities,
+                    "count", activities.size(),
+                    "source", stats.isCacheStale() ? "google_places_auto_refreshed" : "database_cached",
+                    "cacheStats", Map.of(
+                            "totalActivities", stats.getTotalActivities(),
+                            "lastRefresh", stats.getLastRefresh(),
+                            "isCacheStale", stats.isCacheStale(),
+                            "cacheTtlDays", stats.getCacheTtlDays()
+                    )
+            ));
+        } catch (Exception e) {
+            logger.error("Error fetching smart cached activities for destination: {}", destinationId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
