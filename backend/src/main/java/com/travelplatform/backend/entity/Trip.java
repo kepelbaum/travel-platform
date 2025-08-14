@@ -2,10 +2,12 @@ package com.travelplatform.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,7 +15,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "trips")
+@Table(name = "trips", indexes = {
+        @Index(name = "idx_trips_user_id", columnList = "user_id"),
+        @Index(name = "idx_trips_status", columnList = "status"),
+        @Index(name = "idx_trips_dates", columnList = "start_date, end_date")
+})
 public class Trip {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,12 +29,18 @@ public class Trip {
     private String name;
 
     @NotNull
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "start_date")
     private LocalDate startDate;
 
     @NotNull
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @AssertTrue(message = "End date must be after start date")
+    public boolean isEndDateAfterStartDate() {
+        return endDate == null || startDate == null || endDate.isAfter(startDate);
+    }
 
     @Column(precision = 10, scale = 2)
     private BigDecimal budget;

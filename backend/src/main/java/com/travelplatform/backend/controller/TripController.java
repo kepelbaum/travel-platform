@@ -17,55 +17,48 @@ public class TripController {
     private TripService tripService;
 
     @GetMapping
-    public ResponseEntity<List<Trip>> getUserTrips(@RequestParam Long userId) {
-        // TODO: Extract userId from JWT token instead of RequestParam
-        List<Trip> trips = tripService.getUserTrips(userId);
+    public ResponseEntity<List<Trip>> getUserTrips() {
+        List<Trip> trips = tripService.getUserTrips();
         return ResponseEntity.ok(trips);
     }
 
     @PostMapping
-    public ResponseEntity<Trip> createTrip(@Valid @RequestBody Trip trip, @RequestParam Long userId) {
-        // TODO: Extract userId from JWT token instead of RequestParam
-        Trip createdTrip = tripService.createTrip(trip, userId);
+    public ResponseEntity<Trip> createTrip(@Valid @RequestBody Trip trip) {
+        Trip createdTrip = tripService.createTrip(trip);
         return ResponseEntity.ok(createdTrip);
     }
 
     @PostMapping("/{tripId}/destinations/{destinationId}")
     public ResponseEntity<Trip> addDestinationToTrip(
             @PathVariable Long tripId,
-            @PathVariable Long destinationId,
-            @RequestParam Long userId) {
-        Trip updatedTrip = tripService.addDestinationToTrip(tripId, destinationId, userId);
+            @PathVariable Long destinationId) {
+        Trip updatedTrip = tripService.addDestinationToTrip(tripId, destinationId);
         return ResponseEntity.ok(updatedTrip);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Trip> getTripById(@PathVariable Long id, @RequestParam Long userId) {
-        // TODO: Extract userId from JWT token instead of RequestParam
-        Trip trip = tripService.getTripById(id, userId);
+    public ResponseEntity<Trip> getTripById(@PathVariable Long id) {
+        Trip trip = tripService.getTripById(id) ;
         return ResponseEntity.ok(trip);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Trip> updateTrip(@PathVariable Long id, @Valid @RequestBody Trip trip, @RequestParam Long userId) {
-        // TODO: Extract userId from JWT token instead of RequestParam
-        Trip updatedTrip = tripService.updateTrip(id, trip, userId);
+    public ResponseEntity<Trip> updateTrip(@PathVariable Long id, @Valid @RequestBody Trip trip) {
+        Trip updatedTrip = tripService.updateTrip(id, trip);
         return ResponseEntity.ok(updatedTrip);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTrip(@PathVariable Long id, @RequestParam Long userId) {
-        // TODO: Extract userId from JWT token instead of RequestParam
-        tripService.deleteTrip(id, userId);
+    public ResponseEntity<Void> deleteTrip(@PathVariable Long id) {
+        tripService.deleteTrip(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{tripId}/destinations/{destinationId}")
     public ResponseEntity<Trip> removeDestinationFromTrip(
             @PathVariable Long tripId,
-            @PathVariable Long destinationId,
-            @RequestParam Long userId) {
-        Trip updatedTrip = tripService.removeDestinationFromTrip(tripId, destinationId, userId);
+            @PathVariable Long destinationId) {
+        Trip updatedTrip = tripService.removeDestinationFromTrip(tripId, destinationId);
         return ResponseEntity.ok(updatedTrip);
     }
 }

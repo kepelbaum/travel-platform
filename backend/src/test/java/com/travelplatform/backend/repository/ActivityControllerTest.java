@@ -1,9 +1,14 @@
 package com.travelplatform.backend.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.travelplatform.backend.config.GlobalExceptionHandler;
 import com.travelplatform.backend.controller.ActivityController;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
+import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.service.ActivityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -42,7 +48,14 @@ class ActivityControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(activityController).build();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(activityController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
 
         testDestination = new Destination();
         testDestination.setId(1L);
@@ -128,14 +141,14 @@ class ActivityControllerTest {
     }
 
     @Test
-    void createCustomActivity_ReturnsBadRequestOnServiceException() throws Exception {
+    void createCustomActivity_ReturnsNotFoundWhenDestinationNotExists() throws Exception {
         when(activityService.createCustomActivity(any(), any(), any(), any(), any(), any()))
-                .thenThrow(new RuntimeException("Destination not found"));
+                .thenThrow(new DestinationNotFoundException(999L));
 
         mockMvc.perform(post("/api/activities/destination/999/custom")
                         .param("name", "Museum")
                         .param("category", "museum"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -153,7 +166,7 @@ class ActivityControllerTest {
     @Test
     void updateActivity_ReturnsNotFoundWhenActivityNotExists() throws Exception {
         when(activityService.updateActivity(any(), any(), any(), any(), any(), any()))
-                .thenThrow(new RuntimeException("Activity not found"));
+                .thenThrow(new ActivityNotFoundException(999L));
 
         mockMvc.perform(put("/api/activities/999")
                         .param("name", "Updated Name"))

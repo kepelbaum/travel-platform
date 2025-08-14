@@ -12,7 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "activities")
+@Table(name = "activities", indexes = {
+        @Index(name = "idx_activities_destination_id", columnList = "destination_id"),
+        @Index(name = "idx_activities_place_id", columnList = "place_id"),
+        @Index(name = "idx_activities_category", columnList = "category"),
+        @Index(name = "idx_activities_custom", columnList = "is_custom")
+})
 public class Activity {
 
     @Id
@@ -124,7 +129,6 @@ public class Activity {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

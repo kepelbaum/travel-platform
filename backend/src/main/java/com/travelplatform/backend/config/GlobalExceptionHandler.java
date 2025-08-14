@@ -1,5 +1,6 @@
 package com.travelplatform.backend.config;
 
+import com.travelplatform.backend.dto.ErrorResponse;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
 import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.exception.TripActivityNotFoundException;
@@ -12,27 +13,57 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ActivityNotFoundException.class)
-    public ResponseEntity<Void> handleActivityNotFound(ActivityNotFoundException ex) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<ErrorResponse> handleActivityNotFound(ActivityNotFoundException ex) {
+        return ResponseEntity.status(404)
+                .body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(TripActivityNotFoundException.class)
-    public ResponseEntity<Void> handleTripActivityNotFound(TripActivityNotFoundException ex) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<ErrorResponse> handleTripActivityNotFound(TripActivityNotFoundException ex) {
+        return ResponseEntity.status(404)
+                .body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(DestinationNotFoundException.class)
-    public ResponseEntity<Void> handleDestinationNotFound(DestinationNotFoundException ex) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<ErrorResponse> handleDestinationNotFound(DestinationNotFoundException ex) {
+        return ResponseEntity.status(404)
+                .body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(TripNotFoundException.class)
-    public ResponseEntity<Void> handleTripNotFound(TripNotFoundException ex) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<ErrorResponse> handleTripNotFound(TripNotFoundException ex) {
+        return ResponseEntity.status(404)
+                .body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Void> handleBadRequest(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().build();
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        String message = ex.getMessage();
+
+        // Handle specific error messages that should return 404
+        if (message != null && (message.contains("not found") || message.contains("Not found"))) {
+            return ResponseEntity.status(404)
+                    .body(new ErrorResponse(message));
+        }
+
+        // Handle database errors and other system errors that should return 500
+        if (message != null && (message.contains("Database error") ||
+                message.contains("database") ||
+                message.contains("connection") ||
+                message.contains("SQL") ||
+                message.contains("transaction"))) {
+            return ResponseEntity.status(500)
+                    .body(new ErrorResponse(message));
+        }
+
+        // Default to 400 for other runtime exceptions
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(message != null ? message : "An error occurred"));
     }
 }

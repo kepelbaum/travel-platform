@@ -174,7 +174,7 @@ public class ActivityService {
                                          Integer durationMinutes, Double costEstimate, String description) {
         Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
         if (destinationOpt.isEmpty()) {
-            throw new RuntimeException("Destination not found with id: " + destinationId);
+            throw new DestinationNotFoundException(destinationId);
         }
 
         Destination destination = destinationOpt.get();

@@ -10,6 +10,7 @@ import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.entity.Trip;
 import com.travelplatform.backend.entity.TripActivity;
 import com.travelplatform.backend.exception.TripActivityNotFoundException;
+import com.travelplatform.backend.exception.TripNotFoundException;
 import com.travelplatform.backend.service.TripActivityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,7 +79,7 @@ class TripActivityControllerTest {
         testTripActivity.setId(1L);
         testTripActivity.setTrip(testTrip);
         testTripActivity.setActivity(testActivity);
-        testTripActivity.setPlannedDate(LocalDate.of(2025, 8, 15));
+        testTripActivity.setPlannedDate(LocalDate.of(2026, 8, 15)); // Updated: 2025 -> 2026
         testTripActivity.setStartTime(LocalTime.of(10, 0));
         testTripActivity.setDurationMinutes(120);
         testTripActivity.setActualCost(2000);
@@ -92,28 +93,28 @@ class TripActivityControllerTest {
         mockMvc.perform(post("/api/trip-activities/schedule")
                         .param("tripId", "1")
                         .param("activityId", "1")
-                        .param("plannedDate", "2025-08-15")
+                        .param("plannedDate", "2026-08-15") // Updated: 2025 -> 2026
                         .param("startTime", "10:00")
                         .param("durationMinutes", "120"))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.plannedDate").value("2025-08-15"))
+                .andExpect(jsonPath("$.plannedDate").value("2026-08-15")) // Updated: 2025 -> 2026
                 .andExpect(jsonPath("$.startTime").value("10:00:00"));
     }
 
     @Test
-    void scheduleActivity_ReturnsBadRequestOnServiceException() throws Exception {
+    void scheduleActivity_ReturnsNotFoundWhenTripNotExists() throws Exception {
         when(tripActivityService.scheduleActivity(any(), any(), any(), any(), any()))
-                .thenThrow(new RuntimeException("Trip not found"));
+                .thenThrow(new TripNotFoundException(999L));
 
         mockMvc.perform(post("/api/trip-activities/schedule")
                         .param("tripId", "999")
                         .param("activityId", "1")
-                        .param("plannedDate", "2025-08-15")
+                        .param("plannedDate", "2026-08-15") // Updated: 2025 -> 2026
                         .param("startTime", "10:00"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Trip not found"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
     }
 
     @Test
@@ -126,7 +127,7 @@ class TripActivityControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].plannedDate").value("2025-08-15"));
+                .andExpect(jsonPath("$[0].plannedDate").value("2026-08-15")); // Updated: 2025 -> 2026
     }
 
     @Test
@@ -140,29 +141,29 @@ class TripActivityControllerTest {
     @Test
     void getActivitiesForDate_ReturnsOkWithFilteredActivities() throws Exception {
         List<TripActivity> activities = Arrays.asList(testTripActivity);
-        when(tripActivityService.getActivitiesForDate(1L, LocalDate.of(2025, 8, 15)))
+        when(tripActivityService.getActivitiesForDate(1L, LocalDate.of(2026, 8, 15))) // Updated: 2025 -> 2026
                 .thenReturn(activities);
 
-        mockMvc.perform(get("/api/trip-activities/trip/1/date/2025-08-15"))
+        mockMvc.perform(get("/api/trip-activities/trip/1/date/2026-08-15")) // Updated: 2025 -> 2026
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].plannedDate").value("2025-08-15"));
+                .andExpect(jsonPath("$[0].plannedDate").value("2026-08-15")); // Updated: 2025 -> 2026
     }
 
     @Test
     void getActivitiesInDateRange_ReturnsOkWithActivitiesInRange() throws Exception {
         List<TripActivity> activities = Arrays.asList(testTripActivity);
-        when(tripActivityService.getActivitiesInDateRange(1L, LocalDate.of(2025, 8, 10),
-                LocalDate.of(2025, 8, 20))).thenReturn(activities);
+        when(tripActivityService.getActivitiesInDateRange(1L, LocalDate.of(2026, 8, 10), // Updated: 2025 -> 2026
+                LocalDate.of(2026, 8, 20))).thenReturn(activities); // Updated: 2025 -> 2026
 
         mockMvc.perform(get("/api/trip-activities/trip/1/date-range")
-                        .param("startDate", "2025-08-10")
-                        .param("endDate", "2025-08-20"))
+                        .param("startDate", "2026-08-10") // Updated: 2025 -> 2026
+                        .param("endDate", "2026-08-20")) // Updated: 2025 -> 2026
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].plannedDate").value("2025-08-15"));
+                .andExpect(jsonPath("$[0].plannedDate").value("2026-08-15")); // Updated: 2025 -> 2026
     }
 
     @Test
@@ -172,7 +173,7 @@ class TripActivityControllerTest {
                 .thenReturn(testTripActivity);
 
         mockMvc.perform(put("/api/trip-activities/1")
-                        .param("plannedDate", "2025-08-16")
+                        .param("plannedDate", "2026-08-16") // Updated: 2025 -> 2026
                         .param("startTime", "14:00")
                         .param("durationMinutes", "180")
                         .param("notes", "Updated notes"))
@@ -187,7 +188,7 @@ class TripActivityControllerTest {
                 .thenThrow(new TripActivityNotFoundException(999L));
 
         mockMvc.perform(put("/api/trip-activities/999")
-                        .param("plannedDate", "2025-08-16"))
+                        .param("plannedDate", "2026-08-16")) // Updated: 2025 -> 2026
                 .andExpect(status().isNotFound());
     }
 
@@ -253,8 +254,8 @@ class TripActivityControllerTest {
     @Test
     void getTripDates_ReturnsOkWithDates() throws Exception {
         List<LocalDate> dates = Arrays.asList(
-                LocalDate.of(2025, 8, 15),
-                LocalDate.of(2025, 8, 16)
+                LocalDate.of(2026, 8, 15), // Updated: 2025 -> 2026
+                LocalDate.of(2026, 8, 16)  // Updated: 2025 -> 2026
         );
         when(tripActivityService.getTripDates(1L)).thenReturn(dates);
 
@@ -262,8 +263,8 @@ class TripActivityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0]").value("2025-08-15"))
-                .andExpect(jsonPath("$[1]").value("2025-08-16"));
+                .andExpect(jsonPath("$[0]").value("2026-08-15")) // Updated: 2025 -> 2026
+                .andExpect(jsonPath("$[1]").value("2026-08-16")); // Updated: 2025 -> 2026
     }
 
     @Test

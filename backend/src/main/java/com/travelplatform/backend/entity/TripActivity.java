@@ -2,6 +2,7 @@ package com.travelplatform.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -10,7 +11,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "trip_activities")
+@Table(name = "trip_activities", indexes = {
+@Index(name = "idx_trip_activities_conflict",
+        columnList = "trip_id, planned_date, start_time"),
+@Index(name = "idx_trip_activities_trip_id",
+        columnList = "trip_id")
+       })
 public class TripActivity {
 
     @Id
@@ -27,7 +33,7 @@ public class TripActivity {
     @JsonIgnore
     private Activity activity;
 
-    @NotNull(message = "Planned date is required")
+    @FutureOrPresent(message = "Planned date cannot be in the past")
     @Column(name = "planned_date", nullable = false)
     private LocalDate plannedDate;
 

@@ -44,8 +44,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -58,9 +58,9 @@ public class TripActivityRepositoryTest {
         eiffel = activityRepository.save(eiffel);
         louvre = activityRepository.save(louvre);
 
-        TripActivity morning = new TripActivity(trip, eiffel, LocalDate.of(2024, 3, 15), LocalTime.of(9, 0), 120);
-        TripActivity afternoon = new TripActivity(trip, louvre, LocalDate.of(2024, 3, 15), LocalTime.of(14, 0), 180);
-        TripActivity nextDay = new TripActivity(trip, eiffel, LocalDate.of(2024, 3, 16), LocalTime.of(10, 0), 90);
+        TripActivity morning = new TripActivity(trip, eiffel, LocalDate.of(2026, 3, 15), LocalTime.of(9, 0), 120); // Updated: 2024 -> 2026
+        TripActivity afternoon = new TripActivity(trip, louvre, LocalDate.of(2026, 3, 15), LocalTime.of(14, 0), 180); // Updated: 2024 -> 2026
+        TripActivity nextDay = new TripActivity(trip, eiffel, LocalDate.of(2026, 3, 16), LocalTime.of(10, 0), 90); // Updated: 2024 -> 2026
 
         tripActivityRepository.save(afternoon);
         tripActivityRepository.save(nextDay);
@@ -71,7 +71,7 @@ public class TripActivityRepositoryTest {
         assertThat(activities).hasSize(3);
         assertThat(activities.get(0).getStartTime()).isEqualTo(LocalTime.of(9, 0));
         assertThat(activities.get(1).getStartTime()).isEqualTo(LocalTime.of(14, 0));
-        assertThat(activities.get(2).getPlannedDate()).isEqualTo(LocalDate.of(2024, 3, 16));
+        assertThat(activities.get(2).getPlannedDate()).isEqualTo(LocalDate.of(2026, 3, 16)); // Updated: 2024 -> 2026
     }
 
     @Test
@@ -82,8 +82,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -94,8 +94,8 @@ public class TripActivityRepositoryTest {
         Activity activity = new Activity("Test Activity", "attraction", paris);
         activity = activityRepository.save(activity);
 
-        LocalDate targetDate = LocalDate.of(2024, 3, 15);
-        LocalDate otherDate = LocalDate.of(2024, 3, 16);
+        LocalDate targetDate = LocalDate.of(2026, 3, 15); // Updated: 2024 -> 2026
+        LocalDate otherDate = LocalDate.of(2026, 3, 16); // Updated: 2024 -> 2026
 
         TripActivity afternoon = new TripActivity(trip, activity, targetDate, LocalTime.of(14, 0), 120);
         TripActivity morning = new TripActivity(trip, activity, targetDate, LocalTime.of(9, 0), 120);
@@ -121,8 +121,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Europe Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -133,10 +133,10 @@ public class TripActivityRepositoryTest {
         Activity activity = new Activity("Test Activity", "attraction", paris);
         activity = activityRepository.save(activity);
 
-        TripActivity before = new TripActivity(trip, activity, LocalDate.of(2024, 3, 14), LocalTime.of(10, 0), 120);
-        TripActivity inRange1 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 15), LocalTime.of(10, 0), 120);
-        TripActivity inRange2 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 17), LocalTime.of(10, 0), 120);
-        TripActivity after = new TripActivity(trip, activity, LocalDate.of(2024, 3, 20), LocalTime.of(10, 0), 120);
+        TripActivity before = new TripActivity(trip, activity, LocalDate.of(2026, 3, 14), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
+        TripActivity inRange1 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 15), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
+        TripActivity inRange2 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 17), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
+        TripActivity after = new TripActivity(trip, activity, LocalDate.of(2026, 3, 20), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
 
         tripActivityRepository.save(before);
         tripActivityRepository.save(inRange1);
@@ -144,11 +144,11 @@ public class TripActivityRepositoryTest {
         tripActivityRepository.save(after);
 
         List<TripActivity> rangeActivities = tripActivityRepository.findByTripIdAndDateRange(
-                trip.getId(), LocalDate.of(2024, 3, 15), LocalDate.of(2024, 3, 18));
+                trip.getId(), LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 18)); // Updated: 2024 -> 2026
 
         assertThat(rangeActivities).hasSize(2);
         assertThat(rangeActivities).extracting(TripActivity::getPlannedDate)
-                .containsExactly(LocalDate.of(2024, 3, 15), LocalDate.of(2024, 3, 17));
+                .containsExactly(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 17)); // Updated: 2024 -> 2026
     }
 
     @Test
@@ -159,8 +159,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -171,7 +171,7 @@ public class TripActivityRepositoryTest {
         Activity activity = new Activity("Test Activity", "attraction", paris);
         activity = activityRepository.save(activity);
 
-        LocalDate testDate = LocalDate.of(2024, 3, 15);
+        LocalDate testDate = LocalDate.of(2026, 3, 15); // Updated: 2024 -> 2026
 
         TripActivity existing = new TripActivity(trip, activity, testDate, LocalTime.of(10, 0), 120);
         tripActivityRepository.save(existing);
@@ -195,8 +195,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Night Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -207,8 +207,8 @@ public class TripActivityRepositoryTest {
         Activity activity = new Activity("Night Activity", "attraction", paris);
         activity = activityRepository.save(activity);
 
-        LocalDate day1 = LocalDate.of(2024, 3, 15);
-        LocalDate day2 = LocalDate.of(2024, 3, 16);
+        LocalDate day1 = LocalDate.of(2026, 3, 15); // Updated: 2024 -> 2026
+        LocalDate day2 = LocalDate.of(2026, 3, 16); // Updated: 2024 -> 2026
 
         TripActivity nightActivity = new TripActivity(trip, activity, day1, LocalTime.of(23, 0), 120);
         tripActivityRepository.save(nightActivity);
@@ -226,8 +226,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -240,7 +240,7 @@ public class TripActivityRepositoryTest {
         activity1 = activityRepository.save(activity1);
         activity2 = activityRepository.save(activity2);
 
-        LocalDate testDate = LocalDate.of(2024, 3, 15);
+        LocalDate testDate = LocalDate.of(2026, 3, 15); // Updated: 2024 -> 2026
 
         TripActivity morning = new TripActivity(trip, activity1, testDate, LocalTime.of(9, 0), 120);
         TripActivity afternoon = new TripActivity(trip, activity2, testDate, LocalTime.of(15, 0), 120);
@@ -262,8 +262,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -276,7 +276,7 @@ public class TripActivityRepositoryTest {
         scheduled = activityRepository.save(scheduled);
         notScheduled = activityRepository.save(notScheduled);
 
-        TripActivity tripActivity = new TripActivity(trip, scheduled, LocalDate.of(2024, 3, 15), LocalTime.of(10, 0), 120);
+        TripActivity tripActivity = new TripActivity(trip, scheduled, LocalDate.of(2026, 3, 15), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
         tripActivityRepository.save(tripActivity);
 
         boolean existsScheduled = tripActivityRepository.existsByTripIdAndActivityId(trip.getId(), scheduled.getId());
@@ -294,8 +294,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -311,8 +311,8 @@ public class TripActivityRepositoryTest {
         expensive = activityRepository.save(expensive);
         cheap = activityRepository.save(cheap);
 
-        TripActivity tripActivity1 = new TripActivity(trip, expensive, LocalDate.of(2024, 3, 15), LocalTime.of(10, 0), 120);
-        TripActivity tripActivity2 = new TripActivity(trip, cheap, LocalDate.of(2024, 3, 15), LocalTime.of(14, 0), 90);
+        TripActivity tripActivity1 = new TripActivity(trip, expensive, LocalDate.of(2026, 3, 15), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
+        TripActivity tripActivity2 = new TripActivity(trip, cheap, LocalDate.of(2026, 3, 15), LocalTime.of(14, 0), 90); // Updated: 2024 -> 2026
         tripActivityRepository.save(tripActivity1);
         tripActivityRepository.save(tripActivity2);
 
@@ -329,8 +329,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Paris Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -341,13 +341,13 @@ public class TripActivityRepositoryTest {
         Activity activity = new Activity("Test Activity", "attraction", paris);
         activity = activityRepository.save(activity);
 
-        TripActivity tripActivity1 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 15), LocalTime.of(10, 0), 120);
+        TripActivity tripActivity1 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 15), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
         tripActivity1.setActualCost(3000);
 
-        TripActivity tripActivity2 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 15), LocalTime.of(14, 0), 90);
+        TripActivity tripActivity2 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 15), LocalTime.of(14, 0), 90); // Updated: 2024 -> 2026
         tripActivity2.setActualCost(2000);
 
-        TripActivity tripActivity3 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 15), LocalTime.of(16, 0), 60);
+        TripActivity tripActivity3 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 15), LocalTime.of(16, 0), 60); // Updated: 2024 -> 2026
 
         tripActivityRepository.save(tripActivity1);
         tripActivityRepository.save(tripActivity2);
@@ -366,8 +366,8 @@ public class TripActivityRepositoryTest {
         Trip trip = new Trip();
         trip.setName("Multi-day Trip");
         trip.setUser(user);
-        trip.setStartDate(LocalDate.of(2024, 3, 15));
-        trip.setEndDate(LocalDate.of(2024, 3, 20));
+        trip.setStartDate(LocalDate.of(2026, 3, 15)); // Updated: 2024 -> 2026
+        trip.setEndDate(LocalDate.of(2026, 3, 20)); // Updated: 2024 -> 2026
         trip = tripRepository.save(trip);
 
         Destination paris = new Destination();
@@ -378,10 +378,10 @@ public class TripActivityRepositoryTest {
         Activity activity = new Activity("Test Activity", "attraction", paris);
         activity = activityRepository.save(activity);
 
-        TripActivity day1Morning = new TripActivity(trip, activity, LocalDate.of(2024, 3, 15), LocalTime.of(9, 0), 120);
-        TripActivity day1Afternoon = new TripActivity(trip, activity, LocalDate.of(2024, 3, 15), LocalTime.of(14, 0), 120);
-        TripActivity day2 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 17), LocalTime.of(10, 0), 120);
-        TripActivity day3 = new TripActivity(trip, activity, LocalDate.of(2024, 3, 16), LocalTime.of(11, 0), 120);
+        TripActivity day1Morning = new TripActivity(trip, activity, LocalDate.of(2026, 3, 15), LocalTime.of(9, 0), 120); // Updated: 2024 -> 2026
+        TripActivity day1Afternoon = new TripActivity(trip, activity, LocalDate.of(2026, 3, 15), LocalTime.of(14, 0), 120); // Updated: 2024 -> 2026
+        TripActivity day2 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 17), LocalTime.of(10, 0), 120); // Updated: 2024 -> 2026
+        TripActivity day3 = new TripActivity(trip, activity, LocalDate.of(2026, 3, 16), LocalTime.of(11, 0), 120); // Updated: 2024 -> 2026
 
         tripActivityRepository.save(day1Morning);
         tripActivityRepository.save(day1Afternoon);
@@ -392,9 +392,9 @@ public class TripActivityRepositoryTest {
 
         assertThat(uniqueDates).hasSize(3);
         assertThat(uniqueDates).containsExactly(
-                LocalDate.of(2024, 3, 15),
-                LocalDate.of(2024, 3, 16),
-                LocalDate.of(2024, 3, 17)
+                LocalDate.of(2026, 3, 15), // Updated: 2024 -> 2026
+                LocalDate.of(2026, 3, 16), // Updated: 2024 -> 2026
+                LocalDate.of(2026, 3, 17)  // Updated: 2024 -> 2026
         );
     }
 }

@@ -9,7 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "destinations")
+@Table(name = "destinations", indexes = {
+        @Index(name = "idx_destinations_location", columnList = "latitude, longitude"),
+        @Index(name = "idx_destinations_place_id", columnList = "place_id")
+})
 public class Destination {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
