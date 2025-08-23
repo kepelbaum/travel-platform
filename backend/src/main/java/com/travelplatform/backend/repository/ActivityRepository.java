@@ -1,6 +1,8 @@
 package com.travelplatform.backend.repository;
 
 import com.travelplatform.backend.entity.Activity;
+import com.travelplatform.backend.entity.Destination;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -71,4 +73,50 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     // Find activities within budget
     @Query("SELECT a FROM Activity a WHERE a.estimatedCost <= :maxCost")
     List<Activity> findActivitiesWithinBudget(@Param("maxCost") Double maxCost);
+
+    Optional<Activity> findByDestinationIdAndNameIgnoreCase(Long destinationId, String name);
+    Optional<Activity> findByDestinationAndNameIgnoreCase(Destination destination, String name);
+
+    @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId AND " +
+            "LOWER(a.name) LIKE LOWER(CONCAT('%', :namePattern, '%'))")
+    List<Activity> findByDestinationIdAndNameContaining(@Param("destinationId") Long destinationId,
+                                                        @Param("namePattern") String namePattern);
+
+    @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId " +
+            "ORDER BY " +
+            "(CASE " +
+            "  WHEN a.rating IS NOT NULL AND a.userRatingsTotal > 100 THEN a.rating * LOG10(a.userRatingsTotal) * 10 " +
+            "  WHEN a.rating IS NOT NULL AND a.userRatingsTotal > 10 THEN a.rating * LOG10(a.userRatingsTotal) * 5 " +
+            "  WHEN a.rating IS NOT NULL THEN a.rating * 2 " +
+            "  ELSE 0 " +
+            "END) DESC, " +
+            "a.name ASC")
+    Page<Activity> findByDestinationIdOrderByPopularity(
+            @Param("destinationId") Long destinationId,
+            Pageable pageable);
+
+    @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId " +
+            "AND a.category = :category " +
+            "ORDER BY " +
+            "(CASE " +
+            "  WHEN a.rating IS NOT NULL AND a.userRatingsTotal > 100 THEN a.rating * LOG10(a.userRatingsTotal) * 10 " +
+            "  WHEN a.rating IS NOT NULL AND a.userRatingsTotal > 10 THEN a.rating * LOG10(a.userRatingsTotal) * 5 " +
+            "  WHEN a.rating IS NOT NULL THEN a.rating * 2 " +
+            "  ELSE 0 " +
+            "END) DESC, " +
+            "a.name ASC")
+    Page<Activity> findByDestinationIdAndCategoryOrderByPopularity(
+            @Param("destinationId") Long destinationId,
+            @Param("category") String category,
+            Pageable pageable);
+
+    @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId " +
+            "AND (LOWER(a.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "OR LOWER(a.description) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
+            "ORDER BY " +
+            "CASE WHEN a.rating IS NOT NULL THEN a.rating ELSE 0 END DESC")
+    Page<Activity> searchByDestinationAndTermPaginated(
+            @Param("destinationId") Long destinationId,
+            @Param("searchTerm") String searchTerm,
+            Pageable pageable);
 }

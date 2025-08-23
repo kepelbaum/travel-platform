@@ -7,6 +7,7 @@ import { Trip } from '@/types';
 import { use } from 'react';
 import Header from '@/components/layout/Header';
 import TripForm from '@/components/forms/TripForm';
+import { useRouter } from 'next/navigation';
 
 interface EditTripPageProps {
   params: Promise<{
@@ -18,6 +19,7 @@ export default function EditTripPage({ params }: EditTripPageProps) {
   const { user } = useAuthStore();
   const { tripId: tripIdString } = use(params);
   const tripId = parseInt(tripIdString);
+  const router = useRouter();
 
   const {
     data: trip,
@@ -42,7 +44,6 @@ export default function EditTripPage({ params }: EditTripPageProps) {
     );
   }
 
-  // Replace the error section in EditTripPage with:
   if (error || !trip) {
     return (
       <div className="min-h-screen bg-gray-50">

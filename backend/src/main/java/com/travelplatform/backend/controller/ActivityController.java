@@ -1,5 +1,6 @@
 package com.travelplatform.backend.controller;
 
+import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.service.ActivityService;
 import com.travelplatform.backend.service.GooglePlacesService;
@@ -7,8 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -27,17 +30,39 @@ public class ActivityController {
     private GooglePlacesService googlePlacesService;
 
     @GetMapping("/destination/{destinationId}")
-    public ResponseEntity<List<Activity>> getActivitiesByDestination(@PathVariable Long destinationId) {
-        List<Activity> activities = activityService.getActivitiesByDestination(destinationId);
-        return ResponseEntity.ok(activities);
+    public ResponseEntity<Map<String, Object>> getActivitiesByDestination(
+            @PathVariable Long destinationId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+            ActivityPageResponse response = activityService.getActivitiesByDestination(destinationId, page, size);
+            return ResponseEntity.ok(Map.of(
+                    "activities", response.getActivities(),
+                    "count", response.getActivities().size(),
+                    "totalCount", response.getTotalCount(),
+                    "hasMore", response.isHasMore(),
+                    "currentPage", response.getCurrentPage(),
+                    "source", response.getSource()
+            ));
     }
 
     @GetMapping("/destination/{destinationId}/category/{category}")
-    public ResponseEntity<List<Activity>> getActivitiesByDestinationAndCategory(
+    public ResponseEntity<Map<String, Object>> getActivitiesByDestinationAndCategory(
             @PathVariable Long destinationId,
-            @PathVariable String category) {
-        List<Activity> activities = activityService.getActivitiesByDestinationAndCategory(destinationId, category);
-        return ResponseEntity.ok(activities);
+            @PathVariable String category,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+
+            ActivityPageResponse response = activityService.getActivitiesByDestinationAndCategory(destinationId, category, page, size);
+            return ResponseEntity.ok(Map.of(
+                    "activities", response.getActivities(),
+                    "count", response.getActivities().size(),
+                    "totalCount", response.getTotalCount(),
+                    "hasMore", response.isHasMore(),
+                    "currentPage", response.getCurrentPage(),
+                    "source", response.getSource()
+            ));
     }
 
     @GetMapping("/{id}")
@@ -66,11 +91,22 @@ public class ActivityController {
     }
 
     @GetMapping("/destination/{destinationId}/search")
-    public ResponseEntity<List<Activity>> searchActivities(
+    public ResponseEntity<Map<String, Object>> searchActivities(
             @PathVariable Long destinationId,
-            @RequestParam String query) {
-        List<Activity> activities = activityService.searchActivities(destinationId, query);
-        return ResponseEntity.ok(activities);
+            @RequestParam String query,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+            ActivityPageResponse response = activityService.searchActivities(destinationId, query, page, size);
+            return ResponseEntity.ok(Map.of(
+                    "activities", response.getActivities(),
+                    "count", response.getActivities().size(),
+                    "totalCount", response.getTotalCount(),
+                    "hasMore", response.isHasMore(),
+                    "currentPage", response.getCurrentPage(),
+                    "query", query,
+                    "source", response.getSource()
+            ));
     }
 
     @GetMapping("/destination/{destinationId}/top-rated")
@@ -135,15 +171,16 @@ public class ActivityController {
 
         logger.info("Searching Google Places for activities in destination: {} with type: {}", destinationId, type);
 
+
         // Check if we already have cached activities and don't need to refresh
         if (!forceRefresh) {
-            List<Activity> cachedActivities = activityService.getActivitiesByDestination(destinationId);
-            if (!cachedActivities.isEmpty()) {
-                logger.info("Returning {} cached activities for destination: {}", cachedActivities.size(), destinationId);
+            ActivityPageResponse response = activityService.getActivitiesByDestination(destinationId, 1, 20);
+            if (!response.getActivities().isEmpty()) {
+                logger.info("Returning {} cached activities for destination: {}", response.getActivities().size(), destinationId);
                 return ResponseEntity.ok(Map.of(
-                        "activities", cachedActivities,
+                        "activities", response.getActivities(),
                         "source", "cached",
-                        "count", cachedActivities.size()
+                        "count", response.getActivities().size()
                 ));
             }
         }
@@ -200,10 +237,7 @@ public class ActivityController {
 
     @PostMapping("/destination/{destinationId}/refresh")
     public ResponseEntity<Map<String, Object>> forceRefreshActivities(@PathVariable Long destinationId) {
-        logger.info("Force refreshing activities for destination: {}", destinationId);
-
         List<Activity> activities = activityService.forceRefreshActivities(destinationId);
-
         return ResponseEntity.ok(Map.of(
                 "activities", activities,
                 "count", activities.size(),
@@ -220,14 +254,12 @@ public class ActivityController {
 
     @GetMapping("/destination/{destinationId}/smart")
     public ResponseEntity<Map<String, Object>> getActivitiesWithSmartCaching(@PathVariable Long destinationId) {
-        List<Activity> activities = activityService.getActivitiesByDestination(destinationId);
-
-        // Get cache stats for response metadata
+        ActivityPageResponse response = activityService.getActivitiesByDestination(destinationId, 1, 20);
         ActivityService.CacheStats stats = activityService.getCacheStats(destinationId);
 
         return ResponseEntity.ok(Map.of(
-                "activities", activities,
-                "count", activities.size(),
+                "activities", response.getActivities(),
+                "count", response.getActivities().size(),
                 "source", stats.isCacheStale() ? "google_places_auto_refreshed" : "database_cached",
                 "cacheStats", Map.of(
                         "totalActivities", stats.getTotalActivities(),
@@ -243,5 +275,21 @@ public class ActivityController {
                 activity.getRating() == null ||
                 activity.getAddress() == null ||
                 activity.getOpeningHours() == null;
+    }
+
+    @GetMapping("/photo/{photoReference}")
+    public ResponseEntity<byte[]> getPhoto(@PathVariable String photoReference) {
+        try {
+            String photoUrl = googlePlacesService.buildPhotoUrl(photoReference);
+            RestTemplate restTemplate = new RestTemplate();
+            byte[] imageBytes = restTemplate.getForObject(photoUrl, byte[].class);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(imageBytes);
+        } catch (Exception e) {
+            logger.warn("Failed to fetch photo for reference: {}", photoReference, e);
+            return ResponseEntity.notFound().build();
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.travelplatform.backend.config.GlobalExceptionHandler;
 import com.travelplatform.backend.controller.ActivityController;
+import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
@@ -22,7 +23,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -69,20 +69,30 @@ class ActivityControllerTest {
 
     @Test
     void getActivitiesByDestination_ReturnsOkWithActivities() throws Exception {
-        List<Activity> activities = Arrays.asList(testActivity);
-        when(activityService.getActivitiesByDestination(1L)).thenReturn(activities);
+        // Mock the new paginated response
+        ActivityPageResponse response = new ActivityPageResponse();
+        response.setActivities(Arrays.asList(testActivity));
+        response.setHasMore(false);
+        response.setCurrentPage(1);
+        response.setTotalCount(1);
+        response.setSource("cached");
+
+        when(activityService.getActivitiesByDestination(1L, 1, 20)).thenReturn(response);
 
         mockMvc.perform(get("/api/activities/destination/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Eiffel Tower"))
-                .andExpect(jsonPath("$[0].category").value("tourist_attraction"));
+                .andExpect(jsonPath("$.activities").isArray())
+                .andExpect(jsonPath("$.activities[0].name").value("Eiffel Tower"))
+                .andExpect(jsonPath("$.activities[0].category").value("tourist_attraction"))
+                .andExpect(jsonPath("$.count").value(1))
+                .andExpect(jsonPath("$.source").value("cached"));
     }
 
     @Test
     void getActivitiesByDestination_ReturnsInternalServerErrorOnException() throws Exception {
-        when(activityService.getActivitiesByDestination(1L)).thenThrow(new RuntimeException("Database error"));
+        when(activityService.getActivitiesByDestination(1L, 1, 20))
+                .thenThrow(new RuntimeException("Database error"));
 
         mockMvc.perform(get("/api/activities/destination/1"))
                 .andExpect(status().isInternalServerError());
@@ -109,14 +119,17 @@ class ActivityControllerTest {
 
     @Test
     void searchActivities_ReturnsMatchingActivities() throws Exception {
-        List<Activity> activities = Arrays.asList(testActivity);
-        when(activityService.searchActivities(1L, "tower")).thenReturn(activities);
+        ActivityPageResponse response = new ActivityPageResponse();
+        response.setActivities(Arrays.asList(testActivity));
+        response.setSource("cached");
+
+        when(activityService.searchActivities(1L, "tower", 1, 20)).thenReturn(response);
 
         mockMvc.perform(get("/api/activities/destination/1/search")
                         .param("query", "tower"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Eiffel Tower"));
+                .andExpect(jsonPath("$.activities").isArray())
+                .andExpect(jsonPath("$.activities[0].name").value("Eiffel Tower"));
     }
 
     @Test

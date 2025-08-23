@@ -52,3 +52,34 @@ export interface AuthResponse {
   user: User;
   token: string;
 }
+
+export interface Activity {
+  id: number;
+  name: string;
+  description?: string;
+  category: string;
+  durationMinutes?: number;
+  estimatedCost?: number;
+  photoUrl?: string;
+  rating?: number;
+  userRatingsTotal?: number;
+  address?: string;
+  openingHours?: string;
+  placeId?: string;
+  destinationId: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TripActivity {
+  id: number;
+  tripId: number;
+  activityId: number;
+  activity: Activity;
+  plannedDate: string;
+  startTime: string;
+  durationMinutes?: number;
+  actualCost?: number;
+  notes?: string;
+  createdAt: string;
+}

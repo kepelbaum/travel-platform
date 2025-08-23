@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { DestinationMiniCard } from '@/components/destinations/DestinationMiniCard';
 import { TripDetails } from '@/components/trips/TripDetails';
 import { DeleteTripModal } from '@/components/trips/DeleteTripModal';
+import ActivityBrowser from '@/components/activities/ActivityBrowser';
+import TripTimeline from '@/components/trip-activities/TripTimeline';
+import { useTripPlanningStore } from '@/store/tripPlanning';
 
 interface TripDetailsPageProps {
   params: Promise<{
@@ -23,9 +26,16 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'timeline' | 'activities'
+  >('overview');
+  const [selectedDestinationId, setSelectedDestinationId] = useState<
+    number | null
+  >(null);
 
   const { tripId: tripIdString } = use(params);
   const tripId = parseInt(tripIdString);
+  const { setActiveTrip } = useTripPlanningStore();
 
   const {
     data: trip,
@@ -35,8 +45,8 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
     queryKey: ['trip', tripId],
     queryFn: () => tripsApi.getTripById(tripId, user?.id || 0),
     enabled: !!user?.id && !!tripId,
-    staleTime: 0, // Data is stale immediately
-    gcTime: 0, // Don't cache at all
+    staleTime: 0,
+    gcTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     retry: false,
@@ -47,16 +57,15 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
       return tripsApi.deleteTrip(tripId, user?.id || 0);
     },
     onSuccess: async () => {
-      // Force immediate refetch of trips list
       await queryClient.refetchQueries({
         queryKey: ['trips', user?.id],
         type: 'active',
       });
-
       router.push('/dashboard?tripDeleted=true');
     },
     onError: (error) => {},
   });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -89,6 +98,11 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
   const handleRemoveDestination = (destinationId: number) => {
     // TODO: Implement remove destination functionality
   };
+
+  // Auto-select destination if only one exists
+  if (trip?.destinations?.length === 1 && !selectedDestinationId) {
+    setSelectedDestinationId(trip.destinations[0].id);
+  }
 
   if (isLoading) {
     return (
@@ -142,7 +156,8 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
     <div className="min-h-screen bg-gray-50">
       <Header />
       {trip && (
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Trip header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
@@ -178,67 +193,206 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
             </div>
           </div>
 
-          <TripDetails trip={trip} />
-
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Destinations
-                </h2>
-                <Link
-                  href="/destinations"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          {/* Tab navigation */}
+          <div className="mb-6">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'overview'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
                 >
-                  Add Destinations
-                </Link>
-              </div>
+                  📋 Overview
+                </button>
+                <button
+                  onClick={() => setActiveTab('timeline')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'timeline'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  📅 Timeline
+                </button>
+                <button
+                  onClick={() => setActiveTab('activities')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'activities'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  🎯 Browse Activities
+                </button>
+              </nav>
+            </div>
+          </div>
 
-              {!trip.destinations || trip.destinations.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
+          {/* Tab content */}
+          {activeTab === 'overview' && (
+            <div>
+              <TripDetails trip={trip} />
+
+              {/* Enhanced destinations section */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Destinations
+                    </h2>
+                    <button
+                      onClick={() => {
+                        setActiveTrip(trip);
+                        router.push('/destinations');
+                      }}
+                      className="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add Destinations
+                    </button>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No destinations yet
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    Start building your itinerary by adding some destinations to
-                    visit.
-                  </p>
-                  <Link
-                    href="/destinations"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                  >
-                    Browse Destinations
-                  </Link>
+
+                  {!trip.destinations || trip.destinations.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
+                        <svg
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No destinations yet
+                      </h3>
+                      <p className="text-gray-500 mb-4">
+                        Start building your itinerary by adding some
+                        destinations to visit.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setActiveTrip(trip);
+                          router.push('/destinations');
+                        }}
+                        className="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                      >
+                        Browse Destinations
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {trip.destinations.map((destination) => (
+                          <div key={destination.id} className="space-y-3">
+                            <DestinationMiniCard
+                              destination={destination}
+                              onRemove={() =>
+                                handleRemoveDestination(destination.id)
+                              }
+                            />
+                            {/* Browse activities button */}
+                            <button
+                              onClick={() => {
+                                setSelectedDestinationId(destination.id);
+                                setActiveTab('activities');
+                              }}
+                              className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              Browse Activities
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Quick activity preview */}
+                      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium text-blue-900">
+                              Ready to plan activities?
+                            </h3>
+                            <p className="text-sm text-blue-700 mt-1">
+                              Browse Google Places activities for your
+                              destinations and create your itinerary.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setActiveTab('activities')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                          >
+                            Get Started
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
+
+          {activeTab === 'activities' && (
+            <div>
+              {/* Destination selector for multiple destinations */}
+              {trip.destinations && trip.destinations.length > 1 && (
+                <div className="mb-6 bg-white rounded-lg shadow p-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    Select destination:
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {trip.destinations.map((destination) => (
+                      <button
+                        key={destination.id}
+                        onClick={() => setSelectedDestinationId(destination.id)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedDestinationId === destination.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        📍 {destination.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Activity browser */}
+              {selectedDestinationId ? (
+                <ActivityBrowser
+                  destinationId={selectedDestinationId}
+                  tripId={tripId}
+                />
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {trip.destinations.map((destination) => (
-                    <DestinationMiniCard
-                      key={destination.id}
-                      destination={destination}
-                      onRemove={() => handleRemoveDestination(destination.id)}
-                    />
-                  ))}
+                <div className="text-center py-12 bg-white rounded-lg shadow">
+                  <div className="text-6xl mb-4">📍</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Select a destination to browse activities
+                  </h3>
+                  <p className="text-gray-500">
+                    Choose a destination to see available activities with Google
+                    Places data.
+                  </p>
                 </div>
               )}
             </div>
-          </div>
+          )}
 
           {showDeleteConfirm && (
             <DeleteTripModal

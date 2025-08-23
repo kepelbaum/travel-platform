@@ -1,5 +1,6 @@
 package com.travelplatform.backend.repository;
 
+import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
@@ -10,8 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,14 +53,21 @@ class ActivityServiceTest {
 
     @Test
     void getActivitiesByDestination_ReturnsActivities() {
-        List<Activity> expectedActivities = Arrays.asList(testActivity);
-        when(activityRepository.findByDestinationId(1L)).thenReturn(expectedActivities);
+        List<Activity> manyActivities = new ArrayList<>();
+        for (int i = 0; i < 60; i++) {
+            Activity activity = new Activity();
+            activity.setName("Test Activity " + i);
+            manyActivities.add(activity);
+        }
 
-        List<Activity> result = activityService.getActivitiesByDestination(1L);
+        Page<Activity> mockPage = new PageImpl<>(manyActivities);
+        when(activityRepository.findByDestinationIdOrderByPopularity(eq(1L), any(Pageable.class)))
+                .thenReturn(mockPage);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("Eiffel Tower");
-        verify(activityRepository).findByDestinationId(1L);
+        ActivityPageResponse result = activityService.getActivitiesByDestination(1L, 1, 20);
+
+        assertThat(result.getActivities()).hasSize(60);
+        assertThat(result.getActivities().get(0).getName()).isEqualTo("Test Activity 0");
     }
 
     @Test
@@ -166,13 +177,19 @@ class ActivityServiceTest {
 
     @Test
     void searchActivities_ReturnsSearchResults() {
-        List<Activity> expectedResults = Arrays.asList(testActivity);
-        when(activityRepository.searchByDestinationAndTerm(1L, "tower")).thenReturn(expectedResults);
+        List<Activity> manyActivities = new ArrayList<>();
+        for (int i = 0; i < 15; i++) {
+            Activity activity = new Activity();
+            activity.setName("Test Activity " + i);
+            manyActivities.add(activity);
+        }
 
-        List<Activity> result = activityService.searchActivities(1L, "tower");
+        Page<Activity> mockPage = new PageImpl<>(manyActivities);
+        when(activityRepository.searchByDestinationAndTermPaginated(eq(1L), eq("tower"), any(Pageable.class)))
+                .thenReturn(mockPage);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("Eiffel Tower");
-        verify(activityRepository).searchByDestinationAndTerm(1L, "tower");
+        ActivityPageResponse result = activityService.searchActivities(1L, "tower", 1, 20);
+
+        assertThat(result.getActivities()).hasSize(15);
     }
 }

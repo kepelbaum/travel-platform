@@ -14,8 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class GooglePlacesService {
@@ -35,6 +34,9 @@ public class GooglePlacesService {
     private static final String TEXT_SEARCH_ENDPOINT = "/textsearch/json";
     private static final String PLACE_DETAILS_ENDPOINT = "/details/json";
 
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     @Autowired
     public GooglePlacesService(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
@@ -45,34 +47,42 @@ public class GooglePlacesService {
      * Search for activities/attractions for a specific destination
      */
     public List<Activity> searchActivitiesForDestination(Long destinationId, String type) {
-        try {
-            Destination destination = destinationRepository.findById(destinationId)
-                    .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
+        Destination destination = destinationRepository.findById(destinationId)
+                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
 
-            String cityName = destination.getName();
-            String query = (type != null && !type.isEmpty())
-                    ? type + " in " + cityName
-                    : "tourist attractions in " + cityName;
+        String cityName = destination.getName();
+        String country = destination.getCountry();
+        Set<String> seenPlaceIds = new HashSet<>();
+        List<Activity> allActivities = new ArrayList<>();
 
-            String url = UriComponentsBuilder.fromHttpUrl(PLACES_API_BASE_URL + TEXT_SEARCH_ENDPOINT)
-                    .queryParam("query", query)
-                    .queryParam("key", apiKey)
-                    .queryParam("language", "en")
-                    .build()
-                    .toUriString();
+        // Multiple targeted searches
+        List<String> queries = Arrays.asList(
+                "top attractions in " + cityName + " " + country,
+                "museums in " + cityName + " " + country,
+                "restaurants in " + cityName + " " + country,
+                "parks in " + cityName + " " + country,
+                "temples in " + cityName + " " + country,
+                "shopping in " + cityName + " " + country,
+                "entertainment in " + cityName + " " + country
+        );
 
-            logger.info("Searching for activities in destination: {} ({})", destinationId, cityName);
-            String response = restTemplate.getForObject(url, String.class);
+        for (String query : queries) {
+            List<Activity> results = performSingleSearch(query, destination);
 
-            logger.info("Built URL: {}", url);
-            logger.info("Google API response: {}", response);
+            // Deduplicate by placeId
+            for (Activity activity : results) {
+                if (activity.getPlaceId() != null && !seenPlaceIds.contains(activity.getPlaceId())) {
+                    allActivities.add(activity);
+                    seenPlaceIds.add(activity.getPlaceId());
+                }
+            }
 
-            return parseActivitiesFromResponse(response);
-
-        } catch (Exception e) {
-            logger.error("Error searching for activities in destination: {}", destinationId, e);
-            return new ArrayList<>();
+            // Rate limiting
+            try { Thread.sleep(200); } catch (InterruptedException e) { break; }
         }
+
+        logger.info("Found {} total unique activities for {}", allActivities.size(), cityName);
+        return allActivities;
     }
 
     /**
@@ -83,7 +93,7 @@ public class GooglePlacesService {
             String url = UriComponentsBuilder.fromHttpUrl(PLACES_API_BASE_URL + PLACE_DETAILS_ENDPOINT)
                     .queryParam("place_id", placeId)
                     .queryParam("key", apiKey)
-                    .queryParam("fields", "name,formatted_address,rating,price_level,photos,opening_hours,website,reviews,types,geometry,formatted_phone_number,international_phone_number")
+                    .queryParam("fields", "name,formatted_address,rating,price_level,photos,opening_hours,website,reviews,types,geometry,formatted_phone_number,international_phone_number,editorial_summary,user_ratings_total")
                     .build()
                     .toUriString();
 
@@ -171,15 +181,48 @@ public class GooglePlacesService {
         try {
             Activity activity = new Activity();
 
-            // Basic info
-            activity.setName(json.has("name") ? json.get("name").asText() : "Unknown");
-            activity.setDescription(json.has("formatted_address") ? json.get("formatted_address").asText() : "");
+            if (json.has("name")) {
+                logger.info("=== FIELDS FOR: {} ===", json.get("name").asText());
+                json.fieldNames().forEachRemaining(field -> {
+                    logger.info("  - {}: {}", field, json.get(field));
+                });
+            }
+
+            String name = json.has("name") ? json.get("name").asText() : null;
+            if (name == null || name.trim().isEmpty()) {
+                logger.warn("Skipping activity with null/empty name: {}", json);
+                return null; // Skip this activity
+            }
+
+            activity.setName(name);
+
+            String description = null;
+
+// Try editorial summary first
+            if (json.has("editorial_summary") && json.get("editorial_summary").has("overview")) {
+                description = json.get("editorial_summary").get("overview").asText();
+            }
+
+// Fallback to reviews if no editorial summary
+//            else if (json.has("reviews") && json.get("reviews").isArray() && json.get("reviews").size() > 0) {
+//                description = json.get("reviews").get(0).get("text").asText();
+//            }
+
+            else {
+                description = "No description available";
+            }
+            activity.setDescription(description);
+
             activity.setPlaceId(json.has("place_id") ? json.get("place_id").asText() : null);
 
-            // Rating (keep as BigDecimal to match ntity)
+            // Rating (keep as BigDecimal to match entity)
             if (json.has("rating")) {
                 double googleRating = json.get("rating").asDouble();
                 activity.setRating(BigDecimal.valueOf(googleRating));
+            }
+
+            if (json.has("user_ratings_total")) {
+                activity.setUserRatingsTotal(json.get("user_ratings_total").asInt());
             }
 
             // Price level and estimated cost
@@ -192,7 +235,7 @@ public class GooglePlacesService {
             // Photo URL (get first photo if available)
             if (json.has("photos") && json.get("photos").isArray() && json.get("photos").size() > 0) {
                 String photoReference = json.get("photos").get(0).get("photo_reference").asText();
-                activity.setPhotoUrl(buildPhotoUrl(photoReference));
+                activity.setPhotoUrl(baseUrl + "/api/activities/photo/" + photoReference);
             }
 
             // Category (infer from types)
@@ -261,7 +304,7 @@ public class GooglePlacesService {
         }
     }
 
-    private String buildPhotoUrl(String photoReference) {
+    public String buildPhotoUrl(String photoReference) {
         if (photoReference == null || photoReference.isEmpty()) {
             return null;
         }
@@ -275,33 +318,41 @@ public class GooglePlacesService {
     }
 
     private String inferCategoryFromTypes(JsonNode types) {
-        // Map Google Place types to categories
+        // Map Google Place types to concise, user-friendly categories
+        List<String> typeList = new ArrayList<>();
         for (JsonNode type : types) {
-            String typeStr = type.asText();
-            switch (typeStr) {
-                case "museum":
-                case "art_gallery":
-                    return "CULTURAL";
-                case "amusement_park":
-                case "zoo":
-                case "aquarium":
-                    return "ENTERTAINMENT";
-                case "restaurant":
-                case "food":
-                case "meal_takeaway":
-                    return "DINING";
-                case "tourist_attraction":
-                case "point_of_interest":
-                    return "SIGHTSEEING";
-                case "park":
-                case "natural_feature":
-                    return "OUTDOOR";
-                case "shopping_mall":
-                case "store":
-                    return "SHOPPING";
-            }
+            typeList.add(type.asText());
         }
-        return "OTHER"; // Default category
+
+        // Check specific types FIRST
+        if (typeList.contains("night_club") || typeList.contains("bar")) {
+            return "Nightlife";
+        }
+        if (typeList.contains("museum") || typeList.contains("art_gallery")) {
+            return "Museum";
+        }
+        if (typeList.contains("restaurant") || typeList.contains("meal_takeaway")) {
+            return "Restaurant";
+        }
+        if (typeList.contains("park") || typeList.contains("natural_feature")) {
+            return "Park";
+        }
+        if (typeList.contains("amusement_park") || typeList.contains("zoo") ||
+                typeList.contains("aquarium") || typeList.contains("bowling_alley")) {
+            return "Attraction";  // Fun/entertainment places
+        }
+        // Historic/iconic landmarks
+        if (typeList.contains("place_of_worship") || typeList.contains("church") ||
+                typeList.contains("synagogue") || typeList.contains("hindu_temple") ||
+                typeList.contains("mosque") || typeList.contains("establishment")) {
+            // Need to check by name for towers/landmarks vs regular establishments
+            return "Landmark";  // Senso-ji, Eiffel Tower, Tokyo Tower
+        }
+//        if (typeList.contains("tourist_attraction") || typeList.contains("point_of_interest")) {
+//            return "Landmark";  // Default famous landmarks
+//        }
+
+        return "Other";
     }
 
     private int getDefaultDurationForCategory(String category) {
@@ -315,5 +366,54 @@ public class GooglePlacesService {
             case "SHOPPING": return 120; // 2 hours for shopping
             default: return 120; // 2 hours default
         }
+    }
+
+    public List<Activity> searchSpecificActivities(Long destinationId, String searchTerm) {
+        Destination destination = destinationRepository.findById(destinationId)
+                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
+
+        String query = searchTerm + " in " + destination.getName();
+        return performSingleSearch(query, destination);
+    }
+
+    public List<Activity> searchActivitiesByCategory(Long destinationId, String category) {
+        Destination destination = destinationRepository.findById(destinationId)
+                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
+
+        String categoryQuery = getCategorySearchQuery(category, destination.getName());
+        return performSingleSearch(categoryQuery, destination);
+    }
+
+    private String getCategorySearchQuery(String category, String cityName) {
+        switch (category.toLowerCase()) {
+            case "museum": return "museums in " + cityName;
+            case "restaurant": return "restaurants in " + cityName;
+            case "park": return "parks in " + cityName;
+            case "entertainment": return "entertainment in " + cityName;
+            case "attraction": return "tourist attractions in " + cityName;
+            default: return category + " in " + cityName;
+        }
+    }
+
+    private List<Activity> performSingleSearch(String query, Destination destination) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(PLACES_API_BASE_URL + TEXT_SEARCH_ENDPOINT)
+                .queryParam("query", query)
+                .queryParam("key", apiKey)
+                .queryParam("language", "en");
+
+        // Add location bias if destination has coordinates
+        if (destination.getLatitude() != null && destination.getLongitude() != null) {
+            String location = destination.getLatitude() + "," + destination.getLongitude();
+            builder.queryParam("location", location)
+                    .queryParam("radius", "50000"); // 50km radius
+        }
+
+        String url = builder.build().toUriString();
+
+        logger.info("=== GOOGLE PLACES QUERY: {} ===", query);
+        logger.info("=== LOCATION BIAS: {},{} ===", destination.getLatitude(), destination.getLongitude());
+
+        String response = restTemplate.getForObject(url, String.class);
+        return parseActivitiesFromResponse(response);
     }
 }

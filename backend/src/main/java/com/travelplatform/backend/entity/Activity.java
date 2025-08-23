@@ -94,6 +94,9 @@ public class Activity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "user_ratings_total")
+    private Integer userRatingsTotal;
+
     public Activity() {}
 
     public Activity(String name, String category, Destination destination) {
@@ -204,4 +207,7 @@ public class Activity {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Integer getUserRatingsTotal() { return userRatingsTotal; }
+    public void setUserRatingsTotal(Integer userRatingsTotal) { this.userRatingsTotal = userRatingsTotal; }
 }

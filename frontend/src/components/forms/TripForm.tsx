@@ -70,11 +70,9 @@ export default function TripForm({
 
   const deleteMutation = useMutation({
     mutationFn: () => {
-      console.log('🔥 DELETING TRIP:', tripId);
       return tripsApi.deleteTrip(tripId!, user?.id || 0);
     },
     onSuccess: () => {
-      console.log('🔥 DELETE SUCCESS');
       router.push('/dashboard?tripDeleted=true');
     },
   });

@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/destinations/**").permitAll()
                         .requestMatchers("/api/activities/**").permitAll()
+                        .requestMatchers("/api/trip-activities/**").permitAll()
                         .requestMatchers("/api/trips/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
