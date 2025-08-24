@@ -14,6 +14,7 @@ import { DeleteTripModal } from '@/components/trips/DeleteTripModal';
 import ActivityBrowser from '@/components/activities/ActivityBrowser';
 import TripTimeline from '@/components/trip-activities/TripTimeline';
 import { useTripPlanningStore } from '@/store/tripPlanning';
+import { getCountryFlag } from '@/lib/utils/CountryFlagHelper';
 
 interface TripDetailsPageProps {
   params: Promise<{
@@ -25,6 +26,7 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  queryClient.invalidateQueries({ queryKey: ['activity-categories'] });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'overview' | 'timeline' | 'activities'
@@ -295,9 +297,12 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {trip.destinations.map((destination) => (
-                          <div key={destination.id} className="space-y-3">
+                          <div
+                            key={destination.id}
+                            className="space-y-3 p-4 border-2 border-gray-200 rounded-lg bg-gray-50"
+                          >
                             <DestinationMiniCard
                               destination={destination}
                               onRemove={() =>
@@ -351,22 +356,25 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
             <div>
               {/* Destination selector for multiple destinations */}
               {trip.destinations && trip.destinations.length > 1 && (
-                <div className="mb-6 bg-white rounded-lg shadow p-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">
-                    Select destination:
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
+                <div className="mb-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-5">
+                  <div className="flex items-center mb-3">
+                    <span className="text-lg mr-2">🗺️</span>
+                    <h3 className="text-sm font-semibold text-blue-900">
+                      Choose your destination:
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
                     {trip.destinations.map((destination) => (
                       <button
                         key={destination.id}
                         onClick={() => setSelectedDestinationId(destination.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border-2 ${
                           selectedDestinationId === destination.id
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-400 shadow-sm'
                         }`}
                       >
-                        📍 {destination.name}
+                        {getCountryFlag(destination.country)} {destination.name}
                       </button>
                     ))}
                   </div>

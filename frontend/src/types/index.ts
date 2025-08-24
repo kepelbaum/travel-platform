@@ -60,6 +60,7 @@ export interface Activity {
   category: string;
   durationMinutes?: number;
   estimatedCost?: number;
+  priceLevel?: number;
   photoUrl?: string;
   rating?: number;
   userRatingsTotal?: number;

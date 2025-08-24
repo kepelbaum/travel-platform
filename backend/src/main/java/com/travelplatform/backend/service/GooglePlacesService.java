@@ -221,9 +221,9 @@ public class GooglePlacesService {
                 activity.setRating(BigDecimal.valueOf(googleRating));
             }
 
-            if (json.has("user_ratings_total")) {
+            if (json.has("user_ratings_total") && !json.get("user_ratings_total").isNull()) {
                 activity.setUserRatingsTotal(json.get("user_ratings_total").asInt());
-            }
+            } //added null safety
 
             // Price level and estimated cost
             if (json.has("price_level")) {
@@ -325,6 +325,8 @@ public class GooglePlacesService {
         }
 
         // Check specific types FIRST
+        if (typeList.contains("shopping_mall") || typeList.contains("department_store")) return "Shopping";
+
         if (typeList.contains("night_club") || typeList.contains("bar")) {
             return "Nightlife";
         }

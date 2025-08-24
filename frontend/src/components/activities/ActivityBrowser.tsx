@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ActivityCard from './ActivityCard';
+import ActivityDetailsModal from './ActivityDetailsModal';
 import { Activity } from '@/types';
 import { activitiesApi } from '@/lib/api';
 
@@ -27,6 +28,9 @@ export default function ActivityBrowser({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [page, setPage] = useState(1);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
+    null
+  );
 
   // Dynamic query based on search/category
   const queryKey = searchQuery
@@ -64,6 +68,9 @@ export default function ActivityBrowser({
   });
 
   const activities = activityResponse?.activities || [];
+  const totalCount = activityResponse?.totalCount || 0;
+  const currentPage = activityResponse?.currentPage || page;
+  const totalPages = Math.ceil(totalCount / 20); // Assuming 20 items per page
 
   const handleForceRefresh = async () => {
     await activitiesApi.refreshActivities(destinationId);
@@ -81,8 +88,125 @@ export default function ActivityBrowser({
     setPage(1); // Reset to first page
   };
 
-  const loadMoreActivities = () => {
-    setPage((prev) => prev + 1);
+  const goToPage = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
+
+  const PaginationControls = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between py-6">
+        {/* Left: Results info */}
+        <div className="text-sm text-gray-600">
+          Showing {(currentPage - 1) * 20 + 1}-
+          {Math.min(currentPage * 20, totalCount)} of {totalCount} activities
+        </div>
+
+        {/* Center: Page controls */}
+        <div className="flex items-center space-x-2">
+          {/* Previous button */}
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1 || isLoading}
+            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
+
+          {/* Page numbers */}
+          <div className="flex items-center space-x-1">
+            {/* Always show first page */}
+            {currentPage > 3 && (
+              <>
+                <button
+                  onClick={() => goToPage(1)}
+                  className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                >
+                  1
+                </button>
+                {currentPage > 4 && <span className="text-gray-400">...</span>}
+              </>
+            )}
+
+            {/* Show pages around current page */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+
+              if (pageNum < 1 || pageNum > totalPages) return null;
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => goToPage(pageNum)}
+                  disabled={isLoading}
+                  className={`px-3 py-2 text-sm rounded-md ${
+                    pageNum === currentPage
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  } disabled:opacity-50`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {/* Always show last page */}
+            {currentPage < totalPages - 2 && (
+              <>
+                {currentPage < totalPages - 3 && (
+                  <span className="text-gray-400">...</span>
+                )}
+                <button
+                  onClick={() => goToPage(totalPages)}
+                  className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                >
+                  {totalPages}
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Next button */}
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages || isLoading}
+            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
+
+        {/* Right: Quick jump */}
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-600">Go to:</span>
+          <select
+            value={currentPage}
+            onChange={(e) => goToPage(Number(e.target.value))}
+            className="px-2 py-1 text-sm border rounded-md focus:ring-2 focus:ring-blue-500"
+          >
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+              (pageNum) => (
+                <option key={pageNum} value={pageNum}>
+                  Page {pageNum}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+      </div>
+    );
   };
 
   if (isLoading && page === 1) {
@@ -91,7 +215,7 @@ export default function ActivityBrowser({
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="h-80 bg-gray-200 rounded-lg animate-pulse"
+            className="h-96 bg-gray-200 rounded-lg animate-pulse"
           ></div>
         ))}
       </div>
@@ -119,12 +243,11 @@ export default function ActivityBrowser({
         <div>
           <h2 className="text-xl font-bold text-gray-900">Activities</h2>
           <p className="text-sm text-gray-500">
-            {activityResponse?.totalCount || activityResponse?.count} total
-            activities •
+            {totalCount} total activities •
             {activityResponse?.source === 'cached'
               ? ' Cached'
               : ' Fresh from Google'}{' '}
-            • Page {activityResponse?.currentPage || page}
+            • Page {currentPage} of {totalPages}
           </p>
         </div>
         <button
@@ -136,19 +259,26 @@ export default function ActivityBrowser({
       </div>
 
       {/* Search and filter */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border space-y-3">
+      <div className="bg-white border-2 border-gray-300 rounded-lg shadow-md p-5 space-y-4">
+        <div className="flex items-center mb-3">
+          <span className="text-lg mr-2">🔍</span>
+          <h3 className="text-sm font-semibold text-gray-700">
+            Search & Filter Activities
+          </h3>
+        </div>
+
         <div className="flex gap-4">
           <input
             type="text"
             placeholder="Search activities..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <select
             value={selectedCategory}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Categories</option>
             {categories?.map((cat: string) => (
@@ -160,69 +290,89 @@ export default function ActivityBrowser({
         </div>
 
         {/* Quick filters */}
-        <div className="flex gap-2">
-          {['attraction', 'restaurant', 'museum'].map((cat) => (
+        <div>
+          <p className="text-xs text-gray-600 mb-2">Quick filters:</p>
+          <div className="flex gap-2 flex-wrap">
             <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-              className={`px-3 py-1 rounded-full text-sm ${
-                selectedCategory === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200'
+              onClick={() => handleCategoryChange('all')}
+              className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
+                selectedCategory === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
               }`}
             >
-              {cat === 'attraction'
-                ? '🏛️ Attractions'
-                : cat === 'restaurant'
-                  ? '🍽️ Dining'
-                  : '🎨 Museums'}
+              📋 All
             </button>
-          ))}
+            {[
+              { key: 'attraction', icon: '🎢', label: 'Attractions' },
+              { key: 'restaurant', icon: '🍽️', label: 'Dining' },
+              { key: 'museum', icon: '🎨', label: 'Museums' },
+              { key: 'landmark', icon: '🏛️', label: 'Landmarks' },
+              { key: 'shopping', icon: '🛍️', label: 'Shopping' },
+              { key: 'park', icon: '🌳', label: 'Parks' },
+              { key: 'nightlife', icon: '🍻', label: 'Nightlife' },
+            ].map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => handleCategoryChange(cat.key)}
+                className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
+                  selectedCategory === cat.key
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                }`}
+              >
+                {cat.icon} {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* Loading overlay for page changes */}
+      {isLoading && page > 1 && (
+        <div className="relative">
+          <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-gray-600">Loading page {page}...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Results */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {activities.map((activity: Activity) => (
-          <ActivityCard key={activity.id} activity={activity} tripId={tripId} />
+          <div
+            key={activity.id}
+            className="border-2 border-gray-200 rounded-xl p-2 bg-white"
+          >
+            <ActivityCard
+              activity={activity}
+              tripId={tripId}
+              onShowDetails={setSelectedActivity}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Load More */}
-      {activityResponse?.hasMore && (
-        <div className="flex justify-center py-6">
-          <button
-            onClick={loadMoreActivities}
-            disabled={isLoading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isLoading ? 'Loading...' : 'Load More Activities'}
-          </button>
-        </div>
-      )}
+      {/* Pagination */}
+      <PaginationControls />
 
       {activities.length === 0 && !isLoading && (
         <div className="text-center py-8 text-gray-500">
           <p>No activities found. Try adjusting your search.</p>
         </div>
       )}
-      {/* Pagination Info */}
-      <div className="flex justify-between items-center py-4">
-        <div className="text-sm text-gray-600">
-          Showing {activities.length} of {activityResponse?.totalCount || 0}{' '}
-          activities
-          {page > 1 && ` (Page ${page})`}
-        </div>
 
-        {page > 1 && (
-          <button
-            onClick={() => setPage(1)}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-          >
-            Back to Page 1
-          </button>
-        )}
-      </div>
+      {/* Activity Details Modal */}
+      {selectedActivity && (
+        <ActivityDetailsModal
+          activity={selectedActivity}
+          tripId={tripId}
+          onClose={() => setSelectedActivity(null)}
+        />
+      )}
     </div>
   );
 }

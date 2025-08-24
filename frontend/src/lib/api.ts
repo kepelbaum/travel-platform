@@ -106,6 +106,7 @@ export interface Activity {
   category: string;
   durationMinutes?: number;
   estimatedCost?: number;
+  priceLevel?: number;
   photoUrl?: string;
   rating?: number;
   userRatingsTotal?: number;
@@ -145,6 +146,16 @@ export interface ActivityResponse {
     isCacheStale: boolean;
     cacheTtlDays: number;
   };
+}
+
+// Define proper parameter interfaces
+interface PaginationParams {
+  page?: number;
+  size?: number;
+}
+
+interface CategoryPaginationParams extends PaginationParams {
+  category?: string;
 }
 
 export const activitiesApi = {
@@ -207,31 +218,26 @@ export const activitiesApi = {
       {}
     );
   },
+
+  // Fixed paginated activities with proper typing
   getActivitiesPaginated: (
     destinationId: number,
-    params: {
-      page?: number;
-      size?: number;
-      category?: string;
-    } = {}
+    params: CategoryPaginationParams = {}
   ) => {
+    const category = params.category || 'all';
     const queryParams = new URLSearchParams({
       page: (params.page || 1).toString(),
       size: (params.size || 20).toString(),
-      category: params.category || 'all',
     });
     return apiClient.get<ActivityResponse>(
-      `/activities/destination/${destinationId}?${queryParams}`
+      `/activities/destination/${destinationId}/category/${category}?${queryParams}`
     );
   },
 
   searchActivitiesPaginated: (
     destinationId: number,
     query: string,
-    params: {
-      page?: number;
-      size?: number;
-    } = {}
+    params: PaginationParams = {}
   ) => {
     const queryParams = new URLSearchParams({
       query,
