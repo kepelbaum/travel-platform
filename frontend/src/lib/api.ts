@@ -98,7 +98,6 @@ export const destinationsApi = {
   getCountries: () => apiClient.get<string[]>('/destinations/countries'),
 };
 
-// Add these interfaces to your types if not already there
 export interface Activity {
   id: number;
   name: string;
@@ -112,6 +111,7 @@ export interface Activity {
   userRatingsTotal?: number;
   address?: string;
   openingHours?: string;
+  reviewsJson?: string;
   placeId?: string;
   destinationId: number;
   createdAt?: string;
@@ -230,7 +230,7 @@ export const activitiesApi = {
       size: (params.size || 20).toString(),
     });
     return apiClient.get<ActivityResponse>(
-      `/activities/destination/${destinationId}/category/${category}?${queryParams}`
+      `/activities/destination/${destinationId}?${queryParams}`
     );
   },
 

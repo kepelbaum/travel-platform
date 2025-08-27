@@ -34,6 +34,7 @@
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/repository/UserRepository.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/service/ActivityService.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/service/AuthService.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/service/CostMultiplierService.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/service/CustomUserDetailsService.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/service/GooglePlacesService.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/service/JwtService.java

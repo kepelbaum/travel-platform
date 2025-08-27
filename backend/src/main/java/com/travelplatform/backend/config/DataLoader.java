@@ -47,7 +47,7 @@ public class DataLoader implements CommandLineRunner {
         destinationRepository.save(rome);
 
         Destination nyc = new Destination();
-        nyc.setName("New York City");
+        nyc.setName("New York");
         nyc.setCountry("United States");
         nyc.setLatitude(new BigDecimal("40.7128"));
         nyc.setLongitude(new BigDecimal("-74.0060"));

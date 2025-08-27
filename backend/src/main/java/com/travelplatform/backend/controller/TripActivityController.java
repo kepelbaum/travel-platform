@@ -62,10 +62,32 @@ public class TripActivityController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plannedDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
             @RequestParam(required = false) Integer durationMinutes,
-            @RequestParam(required = false) String notes) {
+            @RequestParam(required = false) String notes,
+            @RequestParam(required = false) String customName,
+            @RequestParam(required = false) String customDescription,
+            @RequestParam(required = false) Double customEstimatedCost) {
+
         TripActivity tripActivity = tripActivityService.updateScheduledActivity(
-                tripActivityId, plannedDate, startTime, durationMinutes, notes);
+                tripActivityId, plannedDate, startTime, durationMinutes, notes,
+                customName, customDescription, customEstimatedCost);
         return ResponseEntity.ok(tripActivity);
+    }
+
+    @PostMapping("/schedule-custom")
+    public ResponseEntity<TripActivity> scheduleCustomActivity(
+            @RequestParam Long tripId,
+            @RequestParam String customName,
+            @RequestParam String customCategory,
+            @RequestParam(required = false) String customDescription,
+            @RequestParam Double customEstimatedCost,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plannedDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam Integer durationMinutes) {
+
+        TripActivity tripActivity = tripActivityService.scheduleCustomActivity(
+                tripId, customName, customCategory, customDescription, customEstimatedCost,
+                plannedDate, startTime, durationMinutes);
+        return ResponseEntity.status(HttpStatus.CREATED).body(tripActivity);
     }
 
     @DeleteMapping("/{tripActivityId}")

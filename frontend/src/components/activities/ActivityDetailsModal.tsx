@@ -1,14 +1,13 @@
 'use client';
 
-const getStarDisplay = (rating: number) => {
-  return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
-};
-
 import { useState } from 'react';
 import { Activity } from '@/types';
 
 interface ActivityDetailsModalProps {
-  activity: Activity;
+  activity: Activity & {
+    openingHours?: string;
+    reviewsJson?: string;
+  };
   onClose: () => void;
   tripId?: number;
 }
@@ -43,130 +42,85 @@ export default function ActivityDetailsModal({
   >('all');
   const [showAllHours, setShowAllHours] = useState(false);
 
-  // Mock data - replace with actual API data
-  const mockOpeningHours: OpeningHours = {
-    monday: '9:00 AM - 6:00 PM',
-    tuesday: '9:00 AM - 6:00 PM',
-    wednesday: '9:00 AM - 6:00 PM',
-    thursday: '9:00 AM - 6:00 PM',
-    friday: '9:00 AM - 8:00 PM',
-    saturday: '10:00 AM - 8:00 PM',
-    sunday: '10:00 AM - 6:00 PM',
+  // Add click outside handler
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
-  const mockReviews: Review[] = [
-    {
-      author_name: 'Sarah Chen',
-      rating: 5,
-      text: 'Absolutely stunning! The architecture is breathtaking and the guided tour was very informative. Definitely worth the visit, though it can get quite crowded during peak hours.',
-      time: 1704067200,
-      relative_time_description: '2 weeks ago',
-    },
-    {
-      author_name: 'Mike Johnson',
-      rating: 4,
-      text: "Great experience overall. The exhibits were well-maintained and interesting. Only downside was the long queue, but that's expected for such a popular attraction.",
-      time: 1703462400,
-      relative_time_description: '3 weeks ago',
-    },
-    {
-      author_name: 'Emma Wilson',
-      rating: 3,
-      text: 'It was okay. The place is nice but a bit overpriced for what you get. The staff was friendly though and the location is convenient.',
-      time: 1702857600,
-      relative_time_description: '1 month ago',
-    },
-    {
-      author_name: 'David Rodriguez',
-      rating: 5,
-      text: 'One of the best attractions in the city! Amazing views and rich history. I spent hours here and could have stayed longer. Highly recommend!',
-      time: 1702252800,
-      relative_time_description: '1 month ago',
-    },
-  ];
+  // Parse real data from activity
+  const getOpeningHours = () => {
+    if (!activity.openingHours) return null;
+    try {
+      const hoursArray = JSON.parse(activity.openingHours);
 
-  const isOpenNow = () => {
-    const now = new Date();
-    const dayNames = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-    ];
-    const currentDay = dayNames[now.getDay()];
+      if (Array.isArray(hoursArray)) {
+        const hoursObj: OpeningHours = {};
+        hoursArray.forEach((dayText: string) => {
+          const colonIndex = dayText.indexOf(': ');
+          if (colonIndex > 0) {
+            const day = dayText.substring(0, colonIndex).toLowerCase();
+            const hours = dayText.substring(colonIndex + 2);
+            hoursObj[day as keyof OpeningHours] = hours || 'Closed';
+          }
+        });
+        return hoursObj;
+      }
 
-    // Simple check - would need more complex parsing for real implementation
-    const todayHours = mockOpeningHours[currentDay as keyof OpeningHours];
-    if (!todayHours || todayHours === 'Closed') return false;
-
-    // This is simplified - real implementation would parse time ranges
-    return todayHours.includes('AM') || todayHours.includes('PM');
+      return hoursArray;
+    } catch (e) {
+      return null;
+    }
   };
 
-  const getFilteredReviews = () => {
-    if (reviewFilter === 'all') return mockReviews;
-    return mockReviews.filter(
-      (review) => review.rating.toString() === reviewFilter
-    );
+  const getReviews = (): Review[] => {
+    if (!activity.reviewsJson) return [];
+    try {
+      return JSON.parse(activity.reviewsJson);
+    } catch {
+      return [];
+    }
   };
 
-  const getCurrentDayHours = () => {
-    const dayNames = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-    ];
-    const currentDay = dayNames[new Date().getDay()];
-    return (
-      mockOpeningHours[currentDay as keyof OpeningHours] ||
-      'Hours not available'
-    );
-  };
+  const openingHours = getOpeningHours();
+  const reviews = getReviews();
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return 'Duration TBD';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  const getHoursStatus = () => {
+    if (!activity.openingHours) {
+      return {
+        status: 'unavailable',
+        color: 'bg-yellow-500',
+        text: 'Hours not available',
+      };
+    }
+
+    const hours = getOpeningHours();
+    if (!hours) {
+      return {
+        status: 'unavailable',
+        color: 'bg-yellow-500',
+        text: 'Hours not available',
+      };
+    }
+
+    return isOpenNow()
+      ? { status: 'open', color: 'bg-green-500', text: 'Open now' }
+      : { status: 'closed', color: 'bg-red-500', text: 'Closed' };
   };
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
-      landmark: '🏛️',
-      attraction: '🎢',
-      museum: '🎨',
-      restaurant: '🍽️',
-      park: '🌳',
-      nightlife: '🍻',
-      shopping: '🛍️',
-      tourist_attraction: '🎢',
-      amusement_park: '🎢',
-      art_gallery: '🎨',
-      shopping_mall: '🛍️',
-      department_store: '🛍️',
-      church: '🏛️',
-      mosque: '🏛️',
-      synagogue: '🏛️',
-      temple: '🏛️',
-      zoo: '🎢',
-      aquarium: '🎢',
-      casino: '🍻',
-      night_club: '🍻',
-      bar: '🍻',
-      bakery: '🍽️',
-      cafe: '🍽️',
-      meal_takeaway: '🍽️',
-      campground: '🌳',
-      rv_park: '🌳',
+      Landmark: '🏛️',
+      Attraction: '🎢',
+      Museum: '🎨',
+      Restaurant: '🍽️',
+      Park: '🌳',
+      Nightlife: '🍻',
+      Shopping: '🛍️',
+      Other: '📋',
     };
-    return icons[category] || '📍';
+    return icons[category] || '📋';
   };
 
   const getCategoryLabel = (category: string) => {
@@ -213,23 +167,54 @@ export default function ActivityDetailsModal({
     }
   };
 
-  const formatPriceLevel = (priceLevel?: number) => {
-    if (priceLevel === undefined || priceLevel === null) return 'Variable';
+  const isOpenNow = () => {
+    if (!openingHours) return false;
 
-    switch (priceLevel) {
-      case 0:
-        return 'Free';
-      case 1:
-        return '$';
-      case 2:
-        return '$$';
-      case 3:
-        return '$$$';
-      case 4:
-        return '$$$$';
-      default:
-        return 'Variable';
-    }
+    const dayNames = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const currentDay = dayNames[new Date().getDay()];
+
+    const todayHours = openingHours[currentDay as keyof OpeningHours];
+    if (!todayHours || todayHours === 'Closed') return false;
+
+    // This is simplified - real implementation would parse time ranges
+    return todayHours.includes('AM') || todayHours.includes('PM');
+  };
+
+  const getCurrentDayHours = () => {
+    if (!openingHours) return 'Hours not available';
+
+    const dayNames = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const currentDay = dayNames[new Date().getDay()];
+    return (
+      openingHours[currentDay as keyof OpeningHours] || 'Hours not available'
+    );
+  };
+
+  const getFilteredReviews = () => {
+    if (reviewFilter === 'all') return reviews;
+    return reviews.filter(
+      (review) => review.rating.toString() === reviewFilter
+    );
+  };
+
+  const getStarDisplay = (rating: number) => {
+    return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
   };
 
   const openInGoogleMaps = () => {
@@ -240,7 +225,10 @@ export default function ActivityDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header with image */}
         <div className="relative">
@@ -307,18 +295,12 @@ export default function ActivityDetailsModal({
             )}
           </div>
 
-          {/* Quick stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="flex items-center">
-              <span className="text-gray-400 mr-2">⏱️</span>
-              <span className="text-gray-600">
-                {formatDuration(activity.durationMinutes)}
-              </span>
-            </div>
+          {/* Quick stats - only show cost, hide duration */}
+          <div className="mb-6">
             <div className="flex items-center">
               <span className="text-gray-400 mr-2">💰</span>
               <span className="text-gray-600">
-                {formatPriceLevel(activity.priceLevel)}
+                {activity.estimatedCost ? `$${activity.estimatedCost}` : 'Free'}
               </span>
             </div>
           </div>
@@ -342,24 +324,22 @@ export default function ActivityDetailsModal({
               className="w-full flex items-center justify-between mb-3 hover:bg-gray-50 rounded p-2 -m-2"
             >
               <div className="flex items-center">
-                <h3 className="text-lg font-semibold text-gray-900 mr-3">
+                <h3 className="text-lg font-semibold text-gray-900 mr-10">
                   Hours
                 </h3>
-                <div
-                  className={`flex items-center text-sm font-medium ${
-                    isOpenNow() ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
+                <div className="flex items-center">
                   <div
-                    className={`w-2 h-2 rounded-full mr-2 ${
-                      isOpenNow() ? 'bg-green-500' : 'bg-red-500'
-                    }`}
+                    className={`w-2 h-2 rounded-full mr-2 ${getHoursStatus().color}`}
                   ></div>
-                  {isOpenNow() ? 'Open Now' : 'Closed'}
+                  <span className="text-sm text-blue-700 font-bold">
+                    {getHoursStatus().text}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center text-sm text-gray-500">
-                <span className="mr-2">{getCurrentDayHours()}</span>
+                {openingHours && (
+                  <span className="mr-2">{getCurrentDayHours()}</span>
+                )}
                 <svg
                   className={`w-4 h-4 transform transition-transform ${showAllHours ? 'rotate-180' : ''}`}
                   fill="none"
@@ -376,35 +356,44 @@ export default function ActivityDetailsModal({
               </div>
             </button>
 
+            {/* Dropdown shows hours if available, or "Hours not available" message */}
             {showAllHours && (
               <div className="grid grid-cols-1 gap-2 text-sm bg-gray-50 rounded-lg p-3">
-                {Object.entries(mockOpeningHours).map(([day, hours]) => {
-                  const dayNames = [
-                    'sunday',
-                    'monday',
-                    'tuesday',
-                    'wednesday',
-                    'thursday',
-                    'friday',
-                    'saturday',
-                  ];
-                  const currentDay = dayNames[new Date().getDay()];
-                  const isToday = day === currentDay;
-                  return (
-                    <div key={day} className="flex justify-between py-1">
-                      <span
-                        className={`capitalize ${isToday ? 'font-semibold text-blue-600' : ''}`}
-                      >
-                        {day}
-                      </span>
-                      <span
-                        className={`${isToday ? 'font-semibold text-blue-600' : 'text-gray-600'}`}
-                      >
-                        {hours}
-                      </span>
-                    </div>
-                  );
-                })}
+                {openingHours ? (
+                  Object.entries(openingHours).map(([day, hours]) => {
+                    const dayNames = [
+                      'sunday',
+                      'monday',
+                      'tuesday',
+                      'wednesday',
+                      'thursday',
+                      'friday',
+                      'saturday',
+                    ];
+                    const currentDay = dayNames[new Date().getDay()];
+                    const isToday = day === currentDay;
+                    return (
+                      <div key={day} className="flex justify-between py-1">
+                        <span
+                          className={`capitalize ${isToday ? 'font-semibold text-blue-600' : ''}`}
+                        >
+                          {day}
+                        </span>
+                        <span
+                          className={`${isToday ? 'font-semibold text-blue-600' : 'text-gray-600'}`}
+                        >
+                          {typeof hours === 'string'
+                            ? hours
+                            : 'Hours not available'}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-2 text-gray-500">
+                    Hours not available
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -431,73 +420,86 @@ export default function ActivityDetailsModal({
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Reviews</h3>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Filter by:</span>
-                <select
-                  value={reviewFilter}
-                  onChange={(e) => setReviewFilter(e.target.value as any)}
-                  className="text-sm border border-gray-300 rounded px-2 py-1"
-                >
-                  <option value="all">All Reviews</option>
-                  <option value="5">5 Stars</option>
-                  <option value="4">4 Stars</option>
-                  <option value="3">3 Stars</option>
-                  <option value="2">2 Stars</option>
-                  <option value="1">1 Star</option>
-                </select>
-              </div>
+              {reviews.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Filter by:</span>
+                  <select
+                    value={reviewFilter}
+                    onChange={(e) => setReviewFilter(e.target.value as any)}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value="all">All Reviews</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                  </select>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-4">
-              {getFilteredReviews()
-                .slice(0, 3)
-                .map((review, index) => (
-                  <div
-                    key={index}
-                    className="border-b border-gray-200 pb-4 last:border-b-0"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900">
-                            {review.author_name}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {review.relative_time_description}
-                          </span>
-                        </div>
-                        <div className="flex items-center mt-1">
-                          <span className="text-yellow-400 mr-2">
-                            {getStarDisplay(review.rating)}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {review.rating}/5
-                          </span>
+            {reviews.length > 0 && (
+              <div className="space-y-4">
+                {getFilteredReviews()
+                  .slice(0, 3)
+                  .map((review, index) => (
+                    <div
+                      key={index}
+                      className="border-b border-gray-200 pb-4 last:border-b-0"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900">
+                              {review.author_name}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {review.relative_time_description}
+                            </span>
+                          </div>
+                          <div className="flex items-center mt-1">
+                            <span className="text-yellow-400 mr-2">
+                              {getStarDisplay(review.rating)}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              {review.rating}/5
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        {review.text}
+                      </p>
                     </div>
-                    <p className="text-gray-700 text-sm leading-relaxed">
-                      {review.text}
-                    </p>
-                  </div>
-                ))}
-            </div>
+                  ))}
 
-            {getFilteredReviews().length > 3 && (
-              <div className="mt-4 text-center">
-                <button
-                  onClick={openInGoogleMaps}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  View all {getFilteredReviews().length} reviews on Google Maps
-                  →
-                </button>
+                {getFilteredReviews().length > 3 && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={openInGoogleMaps}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View all {getFilteredReviews().length} reviews on Google
+                      Maps →
+                    </button>
+                  </div>
+                )}
+
+                {getFilteredReviews().length === 0 && reviews.length > 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    <p>No reviews found for this rating.</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {getFilteredReviews().length === 0 && (
-              <div className="text-center py-4 text-gray-500">
-                <p>No reviews found for this rating.</p>
+            {reviews.length === 0 && (
+              <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                <p>No reviews available</p>
+                <p className="text-sm mt-1">
+                  Click location above to see reviews on Google Maps
+                </p>
               </div>
             )}
           </div>

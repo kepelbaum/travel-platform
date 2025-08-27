@@ -10,6 +10,20 @@ interface ActivityCardProps {
   onShowDetails?: (activity: Activity) => void;
 }
 
+const getCategoryIcon = (category: string) => {
+  const icons: Record<string, string> = {
+    Landmark: '🏛️',
+    Attraction: '🎢',
+    Museum: '🎨',
+    Restaurant: '🍽️',
+    Park: '🌳',
+    Nightlife: '🍻',
+    Shopping: '🛍️',
+    Other: '📋 ',
+  };
+  return icons[category] || '📋 ';
+};
+
 export default function ActivityCard({
   activity,
   tripId,
@@ -26,34 +40,16 @@ export default function ActivityCard({
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
-      landmark: '🏛️',
-      attraction: '🎢',
-      museum: '🎨',
-      restaurant: '🍽️',
-      park: '🌳',
-      nightlife: '🍻',
-      shopping: '🛍️',
-      tourist_attraction: '🎢',
-      amusement_park: '🎢',
-      art_gallery: '🎨',
-      shopping_mall: '🛍️',
-      department_store: '🛍️',
-      church: '🏛️',
-      mosque: '🏛️',
-      synagogue: '🏛️',
-      temple: '🏛️',
-      zoo: '🎢',
-      aquarium: '🎢',
-      casino: '🍻',
-      night_club: '🍻',
-      bar: '🍻',
-      bakery: '🍽️',
-      cafe: '🍽️',
-      meal_takeaway: '🍽️',
-      campground: '🌳',
-      rv_park: '🌳',
+      Landmark: '🏛️',
+      Attraction: '🎢',
+      Museum: '🎨',
+      Restaurant: '🍽️',
+      Park: '🌳',
+      Nightlife: '🍻',
+      Shopping: '🛍️',
+      Other: '📋',
     };
-    return icons[category] || '📍';
+    return icons[category] || '📋';
   };
 
   const getCategoryLabel = (category: string) => {
@@ -201,7 +197,9 @@ export default function ActivityCard({
             </div>
             <div className="flex items-center text-gray-600">
               <span className="mr-1">💰</span>
-              <span>{formatPriceLevel(activity.priceLevel)}</span>
+              <span>
+                {activity.estimatedCost ? `$${activity.estimatedCost}` : 'Free'}
+              </span>
             </div>
           </div>
 
@@ -213,7 +211,7 @@ export default function ActivityCard({
                   e.stopPropagation(); // Prevent modal from opening
                   const mapsUrl = activity.placeId
                     ? `https://www.google.com/maps/place/?q=place_id:${activity.placeId}`
-                    : `https://www.google.com/maps/search/${encodeURIComponent(activity.address)}`;
+                    : `https://www.google.com/maps/search/${encodeURIComponent(activity.address || '')}`;
                   window.open(mapsUrl, '_blank');
                 }}
                 className="flex items-start text-left hover:text-blue-600 transition-colors w-full"

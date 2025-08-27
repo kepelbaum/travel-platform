@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.repository.DestinationRepository;
+import com.travelplatform.backend.util.ActivityDurationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,15 +56,12 @@ public class GooglePlacesService {
         Set<String> seenPlaceIds = new HashSet<>();
         List<Activity> allActivities = new ArrayList<>();
 
-        // Multiple targeted searches
+        // 4 targeted searches to get ~100 total diverse results
         List<String> queries = Arrays.asList(
-                "top attractions in " + cityName + " " + country,
-                "museums in " + cityName + " " + country,
-                "restaurants in " + cityName + " " + country,
-                "parks in " + cityName + " " + country,
-                "temples in " + cityName + " " + country,
-                "shopping in " + cityName + " " + country,
-                "entertainment in " + cityName + " " + country
+                "must see attractions and places to visit in " + cityName + " " + country,
+                "top restaurants and dining in " + cityName + " " + country,
+                "best museums and cultural sites in " + cityName + " " + country,
+                "popular parks and outdoor activities in " + cityName + " " + country
         );
 
         for (String query : queries) {
@@ -77,7 +75,6 @@ public class GooglePlacesService {
                 }
             }
 
-            // Rate limiting
             try { Thread.sleep(200); } catch (InterruptedException e) { break; }
         }
 
@@ -209,7 +206,7 @@ public class GooglePlacesService {
 //            }
 
             else {
-                description = "No description available";
+                description = "No description available.";
             }
             activity.setDescription(description);
 
@@ -225,23 +222,42 @@ public class GooglePlacesService {
                 activity.setUserRatingsTotal(json.get("user_ratings_total").asInt());
             } //added null safety
 
+            // Get raw Google types first
+            List<String> rawTypes = new ArrayList<>();
+            if (json.has("types") && json.get("types").isArray()) {
+                for (JsonNode type : json.get("types")) {
+                    rawTypes.add(type.asText());
+                }
+            }
+
+// Set duration using the first/primary raw type before normalization
+            String primaryRawType = rawTypes.isEmpty() ? "custom" : rawTypes.get(0);
+            activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(primaryRawType));
+            activity.setEstimatedDuration(ActivityDurationUtils.getDefaultDuration(primaryRawType));
+
+// Then normalize category for display
+            String category = "Other";
+            if (json.has("types") && json.get("types").isArray()) {
+                category = inferCategoryFromTypes(json.get("types"));
+            }
+            activity.setCategory(category);
+
             // Price level and estimated cost
             if (json.has("price_level")) {
                 int priceLevel = json.get("price_level").asInt();
                 activity.setPriceLevel(priceLevel);
-                activity.setEstimatedCost(mapPriceLevelToCost(priceLevel));
+                double cost = mapPriceLevelToCost(priceLevel);
+                activity.setEstimatedCost(cost);
+            } else {
+                // Use NYC baseline category defaults when Google doesn't provide price_level
+                double nycBaseCost = getDefaultCostByCategory(category);
+                activity.setEstimatedCost(nycBaseCost);
             }
 
             // Photo URL (get first photo if available)
             if (json.has("photos") && json.get("photos").isArray() && json.get("photos").size() > 0) {
                 String photoReference = json.get("photos").get(0).get("photo_reference").asText();
                 activity.setPhotoUrl(baseUrl + "/api/activities/photo/" + photoReference);
-            }
-
-            // Category (infer from types)
-            if (json.has("types") && json.get("types").isArray()) {
-                String category = inferCategoryFromTypes(json.get("types"));
-                activity.setCategory(category);
             }
 
             // Set coordinates if available
@@ -268,6 +284,17 @@ public class GooglePlacesService {
                 }
             }
 
+            if (json.has("reviews") && json.get("reviews").isArray()) {
+                JsonNode reviewsNode = json.get("reviews");
+                logger.info("Found {} reviews for {}", reviewsNode.size(), name);
+
+                // Store the entire reviews array as JSON string
+                activity.setReviewsJson(reviewsNode.toString());
+            } else {
+                logger.info("No reviews found for {}", name);
+                activity.setReviewsJson(null);
+            }
+
             // Set website if available
             if (json.has("website")) {
                 activity.setWebsite(json.get("website").asText());
@@ -280,10 +307,6 @@ public class GooglePlacesService {
                 activity.setPhone(json.get("international_phone_number").asText());
             }
 
-            // Default duration estimates based on category
-            activity.setDurationMinutes(getDefaultDurationForCategory(activity.getCategory()));
-            activity.setEstimatedDuration(getDefaultDurationForCategory(activity.getCategory()));
-
             return activity;
 
         } catch (Exception e) {
@@ -292,15 +315,15 @@ public class GooglePlacesService {
         }
     }
 
-    private double mapPriceLevelToCost(int priceLevel) {
+    public double mapPriceLevelToCost(int priceLevel) {
         // Google price levels: 0 = Free, 1 = Inexpensive, 2 = Moderate, 3 = Expensive, 4 = Very Expensive
         switch (priceLevel) {
             case 0: return 0.0;
-            case 1: return 15.0;
-            case 2: return 35.0;
-            case 3: return 65.0;
-            case 4: return 100.0;
-            default: return 25.0; // Default moderate cost
+            case 1: return 20.0;
+            case 2: return 40.0;
+            case 3: return 75.0;
+            case 4: return 120.0;
+            default: return 30.0;
         }
     }
 
@@ -350,24 +373,7 @@ public class GooglePlacesService {
             // Need to check by name for towers/landmarks vs regular establishments
             return "Landmark";  // Senso-ji, Eiffel Tower, Tokyo Tower
         }
-//        if (typeList.contains("tourist_attraction") || typeList.contains("point_of_interest")) {
-//            return "Landmark";  // Default famous landmarks
-//        }
-
         return "Other";
-    }
-
-    private int getDefaultDurationForCategory(String category) {
-        // Return duration in minutes based on category
-        switch (category) {
-            case "CULTURAL": return 180; // 3 hours for museums
-            case "ENTERTAINMENT": return 240; // 4 hours for amusement parks
-            case "DINING": return 90; // 1.5 hours for meals
-            case "SIGHTSEEING": return 120; // 2 hours for sightseeing
-            case "OUTDOOR": return 150; // 2.5 hours for parks
-            case "SHOPPING": return 120; // 2 hours for shopping
-            default: return 120; // 2 hours default
-        }
     }
 
     public List<Activity> searchSpecificActivities(Long destinationId, String searchTerm) {
@@ -397,7 +403,7 @@ public class GooglePlacesService {
         }
     }
 
-    private List<Activity> performSingleSearch(String query, Destination destination) {
+    public List<Activity> performSingleSearch(String query, Destination destination) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(PLACES_API_BASE_URL + TEXT_SEARCH_ENDPOINT)
                 .queryParam("query", query)
                 .queryParam("key", apiKey)
@@ -418,4 +424,18 @@ public class GooglePlacesService {
         String response = restTemplate.getForObject(url, String.class);
         return parseActivitiesFromResponse(response);
     }
+
+    private double getDefaultCostByCategory(String category) {
+        // NYC baseline prices (1.0 multiplier)
+        return switch (category.toLowerCase()) {
+            case "museum" -> 20.0;
+            case "restaurant", "nightlife" -> 45.0;
+            case "park" -> 0.0;
+            case "landmark" -> 15.0;
+            case "attraction" -> 35.0;
+            case "shopping" -> 40.0;
+            default -> 25.0;
+        };
+    }
+
 }

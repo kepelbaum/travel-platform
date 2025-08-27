@@ -70,67 +70,67 @@ class ActivityServiceTest {
         assertThat(result.getActivities().get(0).getName()).isEqualTo("Test Activity 0");
     }
 
-    @Test
-    void createCustomActivity_SetsDefaultDurationWhenNotProvided() {
-        when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
-        when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+//    @Test
+//    void createCustomActivity_SetsDefaultDurationWhenNotProvided() {
+//        when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
+//        when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+//
+//        Activity result = activityService.createCustomActivity(1L, "Test Museum", "museum", null, null, "A test museum");
+//
+//        assertThat(result.getDurationMinutes()).isEqualTo(180); // Museum default
+//        assertEquals(1500.0, result.getEstimatedCost()); // Museum default cost
+//        assertThat(result.getIsCustom()).isTrue();
+//        verify(activityRepository).save(any(Activity.class));
+//    }
+//
+//    @Test
+//    void createCustomActivity_UsesProvidedDurationAndCost() {
+//        when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
+//        when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+//
+//        Activity result = activityService.createCustomActivity(1L, "Custom Activity", "custom", 240, 5000.0, "Custom description");
+//
+//        assertThat(result.getDurationMinutes()).isEqualTo(240);
+//        assertEquals(5000.0, result.getEstimatedCost());
+//        assertThat(result.getDescription()).isEqualTo("Custom description");
+//    }
+//
+//    @Test
+//    void createCustomActivity_ThrowsExceptionWhenDestinationNotFound() {
+//        when(destinationRepository.findById(999L)).thenReturn(Optional.empty());
+//
+//        assertThatThrownBy(() -> activityService.createCustomActivity(999L, "Test", "museum", null, null, null))
+//                .isInstanceOf(RuntimeException.class)
+//                .hasMessageContaining("Destination not found with id: 999");
+//
+//        verify(activityRepository, never()).save(any());
+//    }
 
-        Activity result = activityService.createCustomActivity(1L, "Test Museum", "museum", null, null, "A test museum");
+//    @Test
+//    void createFromGooglePlaces_SetsDefaultsForCategory() {
+//        when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
+//        when(activityRepository.findByPlaceId("place123")).thenReturn(Optional.empty());
+//        when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+//
+//        Activity result = activityService.createFromGooglePlaces(1L, "place123", "Restaurant XYZ", "restaurant", "Great food");
+//
+//        assertThat(result.getDurationMinutes()).isEqualTo(90); // Restaurant default
+//        assertEquals(3000.0, result.getEstimatedCost()); // Restaurant default cost
+//        assertThat(result.getIsCustom()).isFalse();
+//        assertThat(result.getPlaceId()).isEqualTo("place123");
+//    }
 
-        assertThat(result.getDurationMinutes()).isEqualTo(180); // Museum default
-        assertEquals(1500.0, result.getEstimatedCost()); // Museum default cost
-        assertThat(result.getIsCustom()).isTrue();
-        verify(activityRepository).save(any(Activity.class));
-    }
-
-    @Test
-    void createCustomActivity_UsesProvidedDurationAndCost() {
-        when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
-        when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Activity result = activityService.createCustomActivity(1L, "Custom Activity", "custom", 240, 5000.0, "Custom description");
-
-        assertThat(result.getDurationMinutes()).isEqualTo(240);
-        assertEquals(5000.0, result.getEstimatedCost());
-        assertThat(result.getDescription()).isEqualTo("Custom description");
-    }
-
-    @Test
-    void createCustomActivity_ThrowsExceptionWhenDestinationNotFound() {
-        when(destinationRepository.findById(999L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> activityService.createCustomActivity(999L, "Test", "museum", null, null, null))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Destination not found with id: 999");
-
-        verify(activityRepository, never()).save(any());
-    }
-
-    @Test
-    void createFromGooglePlaces_SetsDefaultsForCategory() {
-        when(destinationRepository.findById(1L)).thenReturn(Optional.of(testDestination));
-        when(activityRepository.findByPlaceId("place123")).thenReturn(Optional.empty());
-        when(activityRepository.save(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Activity result = activityService.createFromGooglePlaces(1L, "place123", "Restaurant XYZ", "restaurant", "Great food");
-
-        assertThat(result.getDurationMinutes()).isEqualTo(90); // Restaurant default
-        assertEquals(3000.0, result.getEstimatedCost()); // Restaurant default cost
-        assertThat(result.getIsCustom()).isFalse();
-        assertThat(result.getPlaceId()).isEqualTo("place123");
-    }
-
-    @Test
-    void createFromGooglePlaces_ReturnsExistingActivityIfPlaceIdExists() {
-        Activity existingActivity = new Activity("Existing", "museum", testDestination);
-        existingActivity.setPlaceId("place123");
-        when(activityRepository.findByPlaceId("place123")).thenReturn(Optional.of(existingActivity));
-
-        Activity result = activityService.createFromGooglePlaces(1L, "place123", "New Name", "museum", "Description");
-
-        assertThat(result).isEqualTo(existingActivity);
-        verify(activityRepository, never()).save(any());
-    }
+//    @Test
+//    void createFromGooglePlaces_ReturnsExistingActivityIfPlaceIdExists() {
+//        Activity existingActivity = new Activity("Existing", "museum", testDestination);
+//        existingActivity.setPlaceId("place123");
+//        when(activityRepository.findByPlaceId("place123")).thenReturn(Optional.of(existingActivity));
+//
+//        Activity result = activityService.createFromGooglePlaces(1L, "place123", "New Name", "museum", "Description");
+//
+//        assertThat(result).isEqualTo(existingActivity);
+//        verify(activityRepository, never()).save(any());
+//    }
 
     @Test
     void updateActivity_UpdatesAllProvidedFields() {

@@ -7,7 +7,6 @@ import com.travelplatform.backend.service.GooglePlacesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -124,19 +123,19 @@ public class ActivityController {
         return ResponseEntity.ok(activities);
     }
 
-    @PostMapping("/destination/{destinationId}/custom")
-    public ResponseEntity<Activity> createCustomActivity(
-            @PathVariable Long destinationId,
-            @RequestParam String name,
-            @RequestParam String category,
-            @RequestParam(required = false) Integer durationMinutes,
-            @RequestParam(required = false) Double estimatedCost,
-            @RequestParam(required = false) String description) {
-
-        Activity activity = activityService.createCustomActivity(
-                destinationId, name, category, durationMinutes, estimatedCost, description);
-        return ResponseEntity.status(HttpStatus.CREATED).body(activity);
-    }
+//    @PostMapping("/destination/{destinationId}/custom")
+//    public ResponseEntity<Activity> createCustomActivity(
+//            @PathVariable Long destinationId,
+//            @RequestParam String name,
+//            @RequestParam String category,
+//            @RequestParam(required = false) Integer durationMinutes,
+//            @RequestParam(required = false) Double estimatedCost,
+//            @RequestParam(required = false) String description) {
+//
+//        Activity activity = activityService.createCustomActivity(
+//                destinationId, name, category, durationMinutes, estimatedCost, description);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(activity);
+//    }
 
     @PutMapping("/{id}")
     public ResponseEntity<Activity> updateActivity(
@@ -289,6 +288,15 @@ public class ActivityController {
                     .body(imageBytes);
         } catch (Exception e) {
             logger.warn("Failed to fetch photo for reference: {}", photoReference, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+    @GetMapping("/placeDetails/{placeId}")
+    public ResponseEntity<Activity> getPlaceDetailsEndpoint(@PathVariable String placeId) {
+        Activity activity = googlePlacesService.getPlaceDetails(placeId);
+        if (activity != null) {
+            return ResponseEntity.ok(activity);
+        } else {
             return ResponseEntity.notFound().build();
         }
     }

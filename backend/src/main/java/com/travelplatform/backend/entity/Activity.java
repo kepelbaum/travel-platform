@@ -97,6 +97,9 @@ public class Activity {
     @Column(name = "user_ratings_total")
     private Integer userRatingsTotal;
 
+    @Column(name = "reviews_json", columnDefinition = "TEXT")
+    private String reviewsJson;
+
     public Activity() {}
 
     public Activity(String name, String category, Destination destination) {
@@ -210,4 +213,7 @@ public class Activity {
 
     public Integer getUserRatingsTotal() { return userRatingsTotal; }
     public void setUserRatingsTotal(Integer userRatingsTotal) { this.userRatingsTotal = userRatingsTotal; }
+
+    public String getReviewsJson() { return reviewsJson; }
+    public void setReviewsJson(String reviewsJson) { this.reviewsJson = reviewsJson; }
 }

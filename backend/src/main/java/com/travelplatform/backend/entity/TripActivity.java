@@ -29,9 +29,21 @@ public class TripActivity {
     private Trip trip;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "activity_id", nullable = false)
+    @JoinColumn(name = "activity_id", nullable = true)
     @JsonIgnore
     private Activity activity;
+
+    @Column(name = "custom_name")
+    private String customName;
+
+    @Column(name = "custom_category")
+    private String customCategory;
+
+    @Column(name = "custom_description", columnDefinition = "TEXT")
+    private String customDescription;
+
+    @Column(name = "custom_estimated_cost")
+    private Double customEstimatedCost;
 
     @FutureOrPresent(message = "Planned date cannot be in the past")
     @Column(name = "planned_date", nullable = false)
@@ -117,4 +129,36 @@ public class TripActivity {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getCustomName() {
+        return customName;
+    }
+
+    public void setCustomName(String customName) {
+        this.customName = customName;
+    }
+
+    public String getCustomCategory() {
+        return customCategory;
+    }
+
+    public void setCustomCategory(String customCategory) {
+        this.customCategory = customCategory;
+    }
+
+    public String getCustomDescription() {
+        return customDescription;
+    }
+
+    public void setCustomDescription(String customDescription) {
+        this.customDescription = customDescription;
+    }
+
+    public Double getCustomEstimatedCost() {
+        return customEstimatedCost;
+    }
+
+    public void setCustomEstimatedCost(Double customEstimatedCost) {
+        this.customEstimatedCost = customEstimatedCost;
+    }
 }

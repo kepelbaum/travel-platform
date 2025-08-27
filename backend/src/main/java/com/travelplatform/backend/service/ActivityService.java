@@ -4,10 +4,9 @@ import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
-import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.repository.ActivityRepository;
 import com.travelplatform.backend.repository.DestinationRepository;
-import com.travelplatform.backend.util.ActivityDurationUtils;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ActivityService {
@@ -39,6 +36,9 @@ public class ActivityService {
 
     @Autowired
     private GooglePlacesService googlePlacesService;
+
+    @Autowired
+    private CostMultiplierService costMultiplierService;
 
     /**
      * Get activities by destination with intelligent caching
@@ -171,57 +171,57 @@ public class ActivityService {
         return getActivitiesWithPagination(destinationId, category, null, page, size);
     }
 
-    @CacheEvict(value = {"destinationActivities", "categoryActivities", "activityById"}, allEntries = true)
-    public Activity createCustomActivity(Long destinationId, String name, String category,
-                                         Integer durationMinutes, Double costEstimate, String description) {
-        Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
-        if (destinationOpt.isEmpty()) {
-            throw new DestinationNotFoundException(destinationId);
-        }
-
-        Destination destination = destinationOpt.get();
-        Activity activity = Activity.createCustomActivity(name, category, destination);
-
-        if (durationMinutes != null) {
-            activity.setDurationMinutes(durationMinutes);
-        } else {
-            activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(category));
-        }
-
-        if (costEstimate != null) {
-            activity.setEstimatedCost(costEstimate);
-        } else {
-            activity.setEstimatedCost(ActivityDurationUtils.getDefaultCostEstimate(category));
-        }
-
-        if (description != null) {
-            activity.setDescription(description);
-        }
-
-        return activityRepository.save(activity);
-    }
-
-    public Activity createFromGooglePlaces(Long destinationId, String placeId, String name,
-                                           String category, String description) {
-        Optional<Activity> existingActivity = activityRepository.findByPlaceId(placeId);
-        if (existingActivity.isPresent()) {
-            return existingActivity.get();
-        }
-
-        Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
-        if (destinationOpt.isEmpty()) {
-            throw new DestinationNotFoundException("Destination not found with id: " + destinationId);
-        }
-
-        Destination destination = destinationOpt.get();
-        Activity activity = Activity.createFromGooglePlaces(placeId, name, category, destination);
-        activity.setDescription(description);
-
-        activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(category));
-        activity.setEstimatedCost(ActivityDurationUtils.getDefaultCostEstimate(category));
-
-        return activityRepository.save(activity);
-    }
+//    @CacheEvict(value = {"destinationActivities", "categoryActivities", "activityById"}, allEntries = true)
+//    public Activity createCustomActivity(Long destinationId, String name, String category,
+//                                         Integer durationMinutes, Double costEstimate, String description) {
+//        Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
+//        if (destinationOpt.isEmpty()) {
+//            throw new DestinationNotFoundException(destinationId);
+//        }
+//
+//        Destination destination = destinationOpt.get();
+//        Activity activity = Activity.createCustomActivity(name, category, destination);
+//
+//        if (durationMinutes != null) {
+//            activity.setDurationMinutes(durationMinutes);
+//        } else {
+//            activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(category));
+//        }
+//
+//        if (costEstimate != null) {
+//            activity.setEstimatedCost(costEstimate);
+//        } else {
+//            activity.setEstimatedCost(ActivityDurationUtils.getDefaultCostEstimate(category));
+//        }
+//
+//        if (description != null) {
+//            activity.setDescription(description);
+//        }
+//
+//        return activityRepository.save(activity);
+//    }
+//
+//    public Activity createFromGooglePlaces(Long destinationId, String placeId, String name,
+//                                           String category, String description) {
+//        Optional<Activity> existingActivity = activityRepository.findByPlaceId(placeId);
+//        if (existingActivity.isPresent()) {
+//            return existingActivity.get();
+//        }
+//
+//        Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
+//        if (destinationOpt.isEmpty()) {
+//            throw new DestinationNotFoundException("Destination not found with id: " + destinationId);
+//        }
+//
+//        Destination destination = destinationOpt.get();
+//        Activity activity = Activity.createFromGooglePlaces(placeId, name, category, destination);
+//        activity.setDescription(description);
+//
+//        activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(category));
+//        activity.setEstimatedCost(ActivityDurationUtils.getDefaultCostEstimate(category));
+//
+//        return activityRepository.save(activity);
+//    }
 
     @Cacheable(value = "activityById", key = "#id")
     public Optional<Activity> getActivityById(Long id) {
@@ -274,10 +274,10 @@ public class ActivityService {
      * Save activities from Google Places API, avoiding duplicates
      * Enhanced with better logging for cache monitoring
      */
+    @Transactional
     public List<Activity> saveActivitiesFromPlaces(List<Activity> activities, Long destinationId) {
         List<Activity> savedActivities = new ArrayList<>();
 
-        // Get the destination to ensure we're checking within the right city/country
         Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
         if (destinationOpt.isEmpty()) {
             throw new RuntimeException("Destination not found with id: " + destinationId);
@@ -286,61 +286,55 @@ public class ActivityService {
 
         int newCount = 0;
         int updatedCount = 0;
+        Set<String> processedInBatch = new HashSet<>(); // Prevent within-batch duplicates
 
         for (Activity activity : activities) {
             try {
                 activity.setDestination(destination);
 
-                // First check: Exact placeId match (most reliable)
-                if (activity.getPlaceId() != null) {
-                    Optional<Activity> existingByPlaceId = activityRepository.findByPlaceId(activity.getPlaceId());
-                    if (existingByPlaceId.isPresent()) {
-                        Activity existingActivity = existingByPlaceId.get();
-                        updateActivityWithNewData(existingActivity, activity);
-                        savedActivities.add(activityRepository.save(existingActivity));
-                        updatedCount++;
-                        continue;
-                    }
+                if (activity.getEstimatedCost() != null) {
+                    double adjustedCost = costMultiplierService.applyMultiplier(
+                            activity.getEstimatedCost(), destination.getName());
+                    activity.setEstimatedCost((double) Math.round(adjustedCost));
                 }
 
-                // Second check: Name match within the same destination only
-                if (activity.getName() != null) {
-                    Optional<Activity> existingByName = activityRepository
-                            .findByDestinationIdAndNameIgnoreCase(destinationId, activity.getName());
+                // Skip if already processed in this batch
+                if (activity.getPlaceId() != null && processedInBatch.contains(activity.getPlaceId())) {
+                    continue;
+                }
+
+                // Check for existing activity (atomic within transaction)
+                Optional<Activity> existingByPlaceId = activity.getPlaceId() != null
+                        ? activityRepository.findByPlaceId(activity.getPlaceId())
+                        : Optional.empty();
+
+                if (existingByPlaceId.isPresent()) {
+                    Activity existingActivity = existingByPlaceId.get();
+                    updateActivityWithNewData(existingActivity, activity);
+                    savedActivities.add(activityRepository.save(existingActivity));
+                    updatedCount++;
+                } else {
+                    // Fallback name check for same destination
+                    Optional<Activity> existingByName = activity.getName() != null
+                            ? activityRepository.findByDestinationIdAndNameIgnoreCase(destinationId, activity.getName())
+                            : Optional.empty();
 
                     if (existingByName.isPresent()) {
                         Activity existingActivity = existingByName.get();
                         updateActivityWithNewData(existingActivity, activity);
                         savedActivities.add(activityRepository.save(existingActivity));
                         updatedCount++;
-                        continue;
-                    }
-
-                    // Simple fuzzy matching for same destination only
-                    if (activity.getName().length() > 5) { // Only for meaningful names
-                        List<Activity> similarActivities = activityRepository
-                                .findByDestinationIdAndNameContaining(destinationId,
-                                        activity.getName().split(" ")[0]); // Just first word
-
-                        for (Activity similar : similarActivities) {
-                            // Simple check: if >70% of words match AND same place ID area
-                            if (isSimpleNameMatch(activity.getName(), similar.getName()) &&
-                                    haveSimilarCoordinates(activity, similar)) {
-                                updateActivityWithNewData(similar, activity);
-                                savedActivities.add(activityRepository.save(similar));
-                                updatedCount++;
-                                continue;
-                            }
-                        }
+                    } else {
+                        Activity saved = activityRepository.save(activity);
+                        savedActivities.add(saved);
+                        newCount++;
                     }
                 }
 
-
-
-                // No duplicates found - save as new activity
-                Activity saved = activityRepository.save(activity);
-                savedActivities.add(saved);
-                newCount++;
+                // Track processed place IDs
+                if (activity.getPlaceId() != null) {
+                    processedInBatch.add(activity.getPlaceId());
+                }
 
             } catch (Exception e) {
                 logger.error("Error saving activity: {} for destination: {} ({})",
@@ -636,15 +630,91 @@ public class ActivityService {
         // For general browsing, fetch if we have fewer than 50 activities
         return currentPage.getTotalElements() < 50;
     }
-
     private List<Activity> fetchFromGooglePlaces(Long destinationId, String category, String searchTerm) {
-        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            return googlePlacesService.searchSpecificActivities(destinationId, searchTerm);
-        } else if (category != null && !category.equals("all")) {
-            return googlePlacesService.searchActivitiesByCategory(destinationId, category);
-        } else {
-            return googlePlacesService.searchActivitiesForDestination(destinationId, null);
+        Destination destination = destinationRepository.findById(destinationId)
+                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
+
+        String cityName = destination.getName();
+        String country = destination.getCountry();
+        Set<String> seenPlaceIds = new HashSet<>();
+        List<Activity> allActivities = new ArrayList<>();
+
+        List<String> queries = Arrays.asList(
+                "top attractions in " + cityName + " " + country,
+                "museums in " + cityName + " " + country,
+                "restaurants in " + cityName + " " + country,
+                "parks in " + cityName + " " + country,
+                "temples in " + cityName + " " + country,
+                "shopping in " + cityName + " " + country,
+                "entertainment in " + cityName + " " + country
+        );
+
+        // First, collect all basic activities from text searches
+        for (String query : queries) {
+            List<Activity> results = googlePlacesService.performSingleSearch(query, destination);
+
+            for (Activity activity : results) {
+                if (activity.getPlaceId() != null && !seenPlaceIds.contains(activity.getPlaceId())) {
+                    allActivities.add(activity);
+                    seenPlaceIds.add(activity.getPlaceId());
+                }
+            }
+
+            try { Thread.sleep(200); } catch (InterruptedException e) { break; }
         }
+
+        // Then enrich each activity with Place Details for descriptions, hours, etc.
+        logger.info("Enriching {} activities with place details", allActivities.size());
+        for (int i = 0; i < allActivities.size(); i++) {
+            Activity activity = allActivities.get(i);
+            if (activity.getPlaceId() != null) {
+                try {
+                    logger.info("Enriching activity {}/{}: {}", i + 1, allActivities.size(), activity.getName());
+                    Activity detailedActivity = googlePlacesService.getPlaceDetails(activity.getPlaceId());
+
+                    if (detailedActivity != null) {
+                        // Copy enhanced data
+                        if (detailedActivity.getDescription() != null &&
+                                !detailedActivity.getDescription().equals("No description available.")) {
+                            activity.setDescription(detailedActivity.getDescription());
+                        }
+                        if (detailedActivity.getOpeningHours() != null) {
+                            activity.setOpeningHours(detailedActivity.getOpeningHours());
+                        }
+                        if (detailedActivity.getReviewsJson() != null) {
+                            activity.setReviewsJson(detailedActivity.getReviewsJson());
+                        }
+                        if (detailedActivity.getRating() != null) {
+                            activity.setRating(detailedActivity.getRating());
+                        }
+                        if (detailedActivity.getUserRatingsTotal() != null) {
+                            activity.setUserRatingsTotal(detailedActivity.getUserRatingsTotal());
+                        }
+                        if (detailedActivity.getWebsite() != null) {
+                            activity.setWebsite(detailedActivity.getWebsite());
+                        }
+                        if (detailedActivity.getPhone() != null) {
+                            activity.setPhone(detailedActivity.getPhone());
+                        }
+                        // Apply city-based cost multiplier if price level is available
+                        if (detailedActivity.getPriceLevel() != null) {
+                            activity.setPriceLevel(detailedActivity.getPriceLevel());
+                            double baseCost = googlePlacesService.mapPriceLevelToCost(detailedActivity.getPriceLevel());
+                            double adjustedCost = costMultiplierService.applyMultiplier(baseCost, destination.getName());
+                            activity.setEstimatedCost(adjustedCost);
+                        }
+                    }
+
+                    Thread.sleep(100); // Rate limiting between place details calls
+                } catch (Exception e) {
+                    logger.warn("Failed to enrich activity {}: {}", activity.getName(), e.getMessage());
+                }
+            }
+        }
+
+        logger.info("Found {} total unique activities for {}", allActivities.size(), cityName);
+        return allActivities;
     }
+
 
 }

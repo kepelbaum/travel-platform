@@ -87,7 +87,8 @@ public class TripActivityService {
     }
 
     public TripActivity updateScheduledActivity(Long tripActivityId, LocalDate plannedDate,
-                                                LocalTime startTime, Integer durationMinutes, String notes) {
+                                                LocalTime startTime, Integer durationMinutes, String notes,
+                                                String customName, String customDescription, Double customEstimatedCost) {
         TripActivity tripActivity = tripActivityRepository.findById(tripActivityId)
                 .orElseThrow(() -> new TripActivityNotFoundException(tripActivityId));
 
@@ -108,7 +109,9 @@ public class TripActivityService {
                 StringBuilder conflictMessage = new StringBuilder("Time conflict with: ");
                 for (TripActivity conflict : conflicts) {
                     LocalTime conflictEnd = conflict.getStartTime().plusMinutes(conflict.getDurationMinutes());
-                    conflictMessage.append(conflict.getActivity().getName())
+                    String conflictName = conflict.getActivity() != null ?
+                            conflict.getActivity().getName() : conflict.getCustomName();
+                    conflictMessage.append(conflictName)
                             .append(" (")
                             .append(conflict.getPlannedDate())
                             .append(" ")
@@ -120,12 +123,20 @@ public class TripActivityService {
                 throw new RuntimeException(conflictMessage.toString());
             }
 
-            // Update fields
+            // Update scheduling fields
             if (plannedDate != null) tripActivity.setPlannedDate(plannedDate);
             if (startTime != null) tripActivity.setStartTime(startTime);
             if (durationMinutes != null) tripActivity.setDurationMinutes(durationMinutes);
         }
 
+        // Update custom fields (only if this is a custom activity)
+        if (tripActivity.getActivity() == null) {
+            if (customName != null) tripActivity.setCustomName(customName);
+            if (customDescription != null) tripActivity.setCustomDescription(customDescription);
+            if (customEstimatedCost != null) tripActivity.setCustomEstimatedCost(customEstimatedCost);
+        }
+
+        // Update notes (available for both custom and regular activities)
         if (notes != null) tripActivity.setNotes(notes);
 
         return tripActivityRepository.save(tripActivity);
@@ -164,4 +175,53 @@ public class TripActivityService {
     public long getScheduledActivityCount(Long tripId) {
         return tripActivityRepository.countByTripId(tripId);
     }
+
+    public TripActivity scheduleCustomActivity(Long tripId, String customName, String customCategory,
+                                               String customDescription, Double customEstimatedCost,
+                                               LocalDate plannedDate, LocalTime startTime, Integer durationMinutes) {
+
+        Optional<Trip> tripOpt = tripRepository.findById(tripId);
+        if (tripOpt.isEmpty()) {
+            throw new RuntimeException("Trip not found with id: " + tripId);
+        }
+
+        Trip trip = tripOpt.get();
+
+        // Check for time conflicts
+        if (tripActivityRepository.hasTimeConflict(tripId, plannedDate, startTime, durationMinutes)) {
+            List<TripActivity> conflicts = tripActivityRepository.findConflictingActivities(
+                    tripId, plannedDate, startTime, durationMinutes);
+
+            StringBuilder conflictMessage = new StringBuilder("Time conflict with: ");
+            for (TripActivity conflict : conflicts) {
+                LocalTime conflictEnd = conflict.getStartTime().plusMinutes(conflict.getDurationMinutes());
+                String conflictName = conflict.getActivity() != null ?
+                        conflict.getActivity().getName() : conflict.getCustomName();
+                conflictMessage.append(conflictName)
+                        .append(" (")
+                        .append(conflict.getPlannedDate())
+                        .append(" ")
+                        .append(conflict.getStartTime())
+                        .append("-")
+                        .append(conflictEnd)
+                        .append("), ");
+            }
+            throw new RuntimeException(conflictMessage.toString());
+        }
+
+        // Create custom TripActivity (activity = null)
+        TripActivity tripActivity = new TripActivity();
+        tripActivity.setTrip(trip);
+        tripActivity.setActivity(null); // This marks it as custom
+        tripActivity.setCustomName(customName);
+        tripActivity.setCustomCategory(customCategory);
+        tripActivity.setCustomDescription(customDescription);
+        tripActivity.setCustomEstimatedCost(customEstimatedCost);
+        tripActivity.setPlannedDate(plannedDate);
+        tripActivity.setStartTime(startTime);
+        tripActivity.setDurationMinutes(durationMinutes);
+
+        return tripActivityRepository.save(tripActivity);
+    }
+
 }

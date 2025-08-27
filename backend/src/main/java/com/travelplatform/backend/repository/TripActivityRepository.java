@@ -62,7 +62,8 @@ public interface TripActivityRepository extends JpaRepository<TripActivity, Long
 
     Optional<TripActivity> findByTripIdAndActivityId(Long tripId, Long activityId);
 
-    @Query("SELECT COALESCE(SUM(a.estimatedCost), 0) FROM TripActivity ta JOIN ta.activity a WHERE ta.trip.id = :tripId")
+    @Query("SELECT COALESCE(SUM(CASE WHEN ta.activity IS NULL THEN ta.customEstimatedCost ELSE a.estimatedCost END), 0) " +
+            "FROM TripActivity ta LEFT JOIN ta.activity a WHERE ta.trip.id = :tripId")
     Integer calculateTotalEstimatedCost(@Param("tripId") Long tripId);
 
     @Query("SELECT COALESCE(SUM(ta.actualCost), 0) FROM TripActivity ta WHERE ta.trip.id = :tripId AND ta.actualCost IS NOT NULL")

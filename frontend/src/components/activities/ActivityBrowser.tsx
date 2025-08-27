@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ActivityCard from './ActivityCard';
 import ActivityDetailsModal from './ActivityDetailsModal';
@@ -12,13 +12,14 @@ interface ActivityBrowserProps {
   tripId?: number;
 }
 
-interface PaginatedActivityResponse {
+interface ActivityResponse {
   activities: Activity[];
   count: number;
   totalCount?: number;
   hasMore?: boolean;
   currentPage?: number;
   source: string;
+  destination?: any;
 }
 
 export default function ActivityBrowser({
@@ -32,24 +33,11 @@ export default function ActivityBrowser({
     null
   );
 
-  // Dynamic query based on search/category
-  const queryKey = searchQuery
-    ? ['activities', destinationId, 'search', searchQuery, page]
-    : ['activities', destinationId, selectedCategory, page];
+  // Simple API call - get all activities, do all filtering on frontend
+  const queryKey = ['activities', destinationId];
 
-  const queryFn = async () => {
-    if (searchQuery) {
-      return activitiesApi.searchActivitiesPaginated(
-        destinationId,
-        searchQuery,
-        { page }
-      );
-    } else {
-      return activitiesApi.getActivitiesPaginated(destinationId, {
-        page,
-        category: selectedCategory,
-      });
-    }
+  const queryFn = async (): Promise<ActivityResponse> => {
+    return activitiesApi.getActivitiesSmart(destinationId);
   };
 
   const { data: categories } = useQuery({
@@ -62,15 +50,47 @@ export default function ActivityBrowser({
     isLoading,
     error,
     refetch,
-  } = useQuery<PaginatedActivityResponse>({
+  } = useQuery<ActivityResponse>({
     queryKey,
     queryFn,
+    enabled: !!destinationId && destinationId !== undefined,
   });
 
-  const activities = activityResponse?.activities || [];
-  const totalCount = activityResponse?.totalCount || 0;
-  const currentPage = activityResponse?.currentPage || page;
-  const totalPages = Math.ceil(totalCount / 20); // Assuming 20 items per page
+  const allActivities = activityResponse?.activities || [];
+  const destination = activityResponse?.destination || null;
+
+  // Frontend filtering and pagination
+  const processedActivities = useMemo(() => {
+    let filtered = allActivities;
+
+    // Apply category filter (both dropdown and quick filter buttons)
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(
+        (activity: Activity) => activity.category === selectedCategory
+      );
+    }
+
+    // Apply search filter - only matches names that START with the search term
+    if (searchQuery && searchQuery.length >= 2) {
+      filtered = filtered.filter((activity: Activity) =>
+        activity.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+      );
+    }
+
+    // Calculate pagination
+    const startIndex = (page - 1) * 20;
+    const endIndex = startIndex + 20;
+    const paginatedActivities = filtered.slice(startIndex, endIndex);
+
+    return {
+      activities: paginatedActivities,
+      filteredCount: filtered.length,
+    };
+  }, [allActivities, selectedCategory, searchQuery, page]);
+
+  const totalCount = processedActivities.filteredCount;
+  const currentPage = page;
+  const totalPages = Math.ceil(totalCount / 20);
 
   const handleForceRefresh = async () => {
     await activitiesApi.refreshActivities(destinationId);
@@ -79,12 +99,12 @@ export default function ActivityBrowser({
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setPage(1); // Reset to first page
+    setPage(1); // Reset to first page when searching
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    setSearchQuery(''); // Clear search
+    setSearchQuery(''); // Clear search when changing category
     setPage(1); // Reset to first page
   };
 
@@ -238,16 +258,12 @@ export default function ActivityBrowser({
 
   return (
     <div className="space-y-6">
-      {/* Header with cache info */}
+      {/* Header with pagination info */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Activities</h2>
           <p className="text-sm text-gray-500">
-            {totalCount} total activities •
-            {activityResponse?.source === 'cached'
-              ? ' Cached'
-              : ' Fresh from Google'}{' '}
-            • Page {currentPage} of {totalPages}
+            {totalCount} total activities • Page {currentPage} of {totalPages}
           </p>
         </div>
         <button
@@ -303,27 +319,35 @@ export default function ActivityBrowser({
             >
               📋 All
             </button>
-            {[
-              { key: 'attraction', icon: '🎢', label: 'Attractions' },
-              { key: 'restaurant', icon: '🍽️', label: 'Dining' },
-              { key: 'museum', icon: '🎨', label: 'Museums' },
-              { key: 'landmark', icon: '🏛️', label: 'Landmarks' },
-              { key: 'shopping', icon: '🛍️', label: 'Shopping' },
-              { key: 'park', icon: '🌳', label: 'Parks' },
-              { key: 'nightlife', icon: '🍻', label: 'Nightlife' },
-            ].map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => handleCategoryChange(cat.key)}
-                className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
-                  selectedCategory === cat.key
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
-                }`}
-              >
-                {cat.icon} {cat.label}
-              </button>
-            ))}
+            {categories?.map((cat: string) => {
+              const getCategoryIcon = (category: string) => {
+                const icons: Record<string, string> = {
+                  Landmark: '🏛️',
+                  Attraction: '🎢',
+                  Museum: '🎨',
+                  Restaurant: '🍽️',
+                  Park: '🌳',
+                  Nightlife: '🍻',
+                  Shopping: '🛍️',
+                  Other: '📋 ',
+                };
+                return icons[category] || '📋 ';
+              };
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
+                    selectedCategory === cat
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                  }`}
+                >
+                  {getCategoryIcon(cat)} {cat.replace(/_/g, ' ')}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -342,7 +366,7 @@ export default function ActivityBrowser({
 
       {/* Results */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {activities.map((activity: Activity) => (
+        {processedActivities.activities.map((activity: Activity) => (
           <div
             key={activity.id}
             className="border-2 border-gray-200 rounded-xl p-2 bg-white"
@@ -359,7 +383,7 @@ export default function ActivityBrowser({
       {/* Pagination */}
       <PaginationControls />
 
-      {activities.length === 0 && !isLoading && (
+      {processedActivities.activities.length === 0 && !isLoading && (
         <div className="text-center py-8 text-gray-500">
           <p>No activities found. Try adjusting your search.</p>
         </div>
