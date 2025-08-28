@@ -7,9 +7,11 @@ import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.exception.TripNotFoundException;
 import com.travelplatform.backend.repository.DestinationRepository;
 import com.travelplatform.backend.repository.TripRepository;
+import com.travelplatform.backend.repository.TripActivityRepository;
 import com.travelplatform.backend.util.UserSecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,6 +26,9 @@ public class TripService {
 
     @Autowired
     private DestinationRepository destinationRepository;
+
+    @Autowired
+    private TripActivityRepository tripActivityRepository;
 
     public List<Trip> getUserTrips() {
         Long currentUserId = userSecurityUtil.getCurrentUserId();
@@ -57,6 +62,7 @@ public class TripService {
         return tripRepository.save(trip);
     }
 
+    @Transactional
     public void deleteTrip(Long tripId) {
         Trip trip = getTripById(tripId);
         tripRepository.delete(trip);
@@ -71,9 +77,25 @@ public class TripService {
         return tripRepository.save(trip);
     }
 
+    @Transactional
     public Trip removeDestinationFromTrip(Long tripId, Long destinationId) {
         Trip trip = getTripById(tripId);
+
+        // Verify the destination is actually part of this trip
+        boolean destinationExists = trip.getDestinations().stream()
+                .anyMatch(d -> d.getId().equals(destinationId));
+
+        if (!destinationExists) {
+            throw new RuntimeException("Destination not found in this trip");
+        }
+
+        // Delete all trip activities for this destination first
+        tripActivityRepository.deleteByTripIdAndActivityDestinationId(tripId, destinationId);
+
+        // Remove the destination from the trip's destination list
         trip.getDestinations().removeIf(dest -> dest.getId().equals(destinationId));
+
+        // Save the updated trip
         return tripRepository.save(trip);
     }
 }

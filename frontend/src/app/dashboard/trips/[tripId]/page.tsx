@@ -68,6 +68,26 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
     onError: (error) => {},
   });
 
+  // Destination deletion mutation
+  const deleteDestinationMutation = useMutation({
+    mutationFn: (destinationId: number) => {
+      return tripsApi.removeDestinationFromTrip(
+        tripId,
+        destinationId,
+        user?.id || 0
+      );
+    },
+    onSuccess: async () => {
+      // Invalidate the current trip query to refresh the page
+      await queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
+      // Also invalidate trips list in case this affects trip status
+      await queryClient.invalidateQueries({ queryKey: ['trips', user?.id] });
+    },
+    onError: (error) => {
+      console.error('Failed to remove destination:', error);
+    },
+  });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -98,7 +118,12 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
   };
 
   const handleRemoveDestination = (destinationId: number) => {
-    // TODO: Implement remove destination functionality
+    deleteDestinationMutation.mutate(destinationId);
+  };
+
+  // Simple destination image logic - no activity images needed
+  const getDestinationImage = (destination: any) => {
+    return destination.imageUrl || null; // Use gradient fallback if no image
   };
 
   // Auto-select destination if only one exists
@@ -308,6 +333,7 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                               onRemove={() =>
                                 handleRemoveDestination(destination.id)
                               }
+                              activityImage={getDestinationImage(destination)}
                             />
                             {/* Browse activities button */}
                             <button

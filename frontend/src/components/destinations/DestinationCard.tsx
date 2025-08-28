@@ -64,23 +64,30 @@ export function DestinationCard({ destination }: { destination: Destination }) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow h-[420px] flex flex-col">
-      {/* Image placeholder*/}
-      <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center relative flex-shrink-0">
+      {/* Fixed image display with bottom gradient text */}
+      <div className="h-48 relative flex-shrink-0">
         {destination.imageUrl ? (
-          <img
-            src={destination.imageUrl}
-            alt={destination.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="text-center text-white">
-            <h3 className="text-2xl font-bold">{destination.name}</h3>
-            <p className="text-sm opacity-90">{destination.country}</p>
+          <div className="relative w-full h-full">
+            <img
+              src={destination.imageUrl}
+              alt={destination.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              onLoad={() =>
+                console.log(`Image loaded successfully for ${destination.name}`)
+              }
+              onError={(e) =>
+                console.log(`Image failed to load for ${destination.name}:`, e)
+              }
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <div className="text-white">
+                <h3 className="text-xl font-bold">{destination.name}</h3>
+                <p className="text-sm opacity-90">{destination.country}</p>
+              </div>
+            </div>
           </div>
-        )}
-
-        {destination.imageUrl && (
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
             <div className="text-center text-white">
               <h3 className="text-2xl font-bold">{destination.name}</h3>
               <p className="text-sm opacity-90">{destination.country}</p>
@@ -95,11 +102,16 @@ export function DestinationCard({ destination }: { destination: Destination }) {
         </p>
 
         <div className="mt-auto space-y-4">
-          {destination.coordinates && (
-            <p className="text-xs text-gray-500">
-              📍 {destination.coordinates.latitude.toFixed(4)},{' '}
-              {destination.coordinates.longitude.toFixed(4)}
-            </p>
+          {destination.latitude && destination.longitude && (
+            <a
+              href={`https://www.google.com/maps/@${destination.latitude},${destination.longitude},15z`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:text-blue-800 transition-colors inline-block mb-2"
+            >
+              📍 View on Google Maps ({destination.latitude.toFixed(4)},{' '}
+              {destination.longitude.toFixed(4)})
+            </a>
           )}
 
           {activeTrip ? (

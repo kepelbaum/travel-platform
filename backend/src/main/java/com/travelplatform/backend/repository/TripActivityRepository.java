@@ -1,7 +1,9 @@
 package com.travelplatform.backend.repository;
 
 import com.travelplatform.backend.entity.TripActivity;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -73,4 +75,10 @@ public interface TripActivityRepository extends JpaRepository<TripActivity, Long
 
     @Query("SELECT DISTINCT ta.plannedDate FROM TripActivity ta WHERE ta.trip.id = :tripId ORDER BY ta.plannedDate")
     List<LocalDate> findDistinctPlannedDatesByTripId(@Param("tripId") Long tripId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM TripActivity ta WHERE ta.trip.id = :tripId AND ta.activity.destination.id = :destinationId")
+    void deleteByTripIdAndActivityDestinationId(@Param("tripId") Long tripId, @Param("destinationId") Long destinationId);
+
 }

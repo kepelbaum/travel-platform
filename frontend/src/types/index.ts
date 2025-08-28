@@ -16,10 +16,8 @@ export interface Destination {
   id: number;
   name: string;
   country: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
+  latitude: number;
+  longitude: number;
   description: string;
   imageUrl?: string;
 }
@@ -33,6 +31,7 @@ export interface Trip {
   budget: number;
   status: 'draft' | 'planned' | 'active' | 'completed';
   destinations: Destination[];
+  tripActivities?: TripActivity[];
   createdAt: string;
   updatedAt: string;
 }
