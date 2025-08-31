@@ -19,27 +19,59 @@ export function TripCard({ trip }: TripCardProps) {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Parse date components directly to avoid timezone conversion
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      case 'PLANNED':
-        return 'bg-blue-100 text-blue-800';
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
-      case 'COMPLETED':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const getDaysUntilTrip = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day
+
+    // Parse trip start date directly
+    const [year, month, day] = trip.startDate.split('-').map(Number);
+    const startDate = new Date(year, month - 1, day);
+
+    const daysUntil = Math.ceil(
+      (startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysUntil > 0) {
+      return {
+        text: `${daysUntil} days away`,
+        color: 'bg-blue-100 text-blue-800',
+      };
+    } else if (daysUntil === 0) {
+      return {
+        text: 'Starts today!',
+        color: 'bg-green-100 text-green-800',
+      };
+    } else {
+      const endDate = new Date(trip.endDate);
+      const daysFromEnd = Math.ceil(
+        (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysFromEnd >= 0) {
+        return {
+          text: 'In progress',
+          color: 'bg-green-100 text-green-800',
+        };
+      } else {
+        return {
+          text: 'Completed',
+          color: 'bg-purple-100 text-purple-800',
+        };
+      }
     }
   };
+
+  const tripStatus = getDaysUntilTrip();
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow h-[280px] flex flex-col">
@@ -48,9 +80,9 @@ export function TripCard({ trip }: TripCardProps) {
           {trip.name}
         </h3>
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tripStatus.color}`}
         >
-          {trip.status}
+          {tripStatus.text}
         </span>
       </div>
 

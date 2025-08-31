@@ -35,6 +35,7 @@ export default function ActivityScheduleForm({
         plannedDate: data.plannedDate,
         startTime: data.startTime,
         durationMinutes: data.durationMinutes,
+        notes: data.notes,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip-activities', tripId] });

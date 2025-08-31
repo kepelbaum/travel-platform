@@ -65,8 +65,10 @@ export interface Activity {
   userRatingsTotal?: number;
   address?: string;
   openingHours?: string;
+  reviewsJson?: string;
   placeId?: string;
   destinationId: number;
+  destination?: Destination;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -79,6 +81,7 @@ export interface TripActivity {
   plannedDate: string;
   startTime: string;
   durationMinutes?: number;
+  timezone?: string;
   actualCost?: number;
   notes?: string;
   createdAt: string;

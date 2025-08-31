@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -18,10 +17,12 @@ import java.util.Optional;
 public interface TripActivityRepository extends JpaRepository<TripActivity, Long> {
 
     // Find all activities for a trip
-    List<TripActivity> findByTripIdOrderByPlannedDateAscStartTimeAsc(Long tripId);
+    @Query("SELECT ta FROM TripActivity ta LEFT JOIN FETCH ta.activity WHERE ta.trip.id = :tripId ORDER BY ta.plannedDate ASC, ta.startTime ASC")
+    List<TripActivity> findByTripIdOrderByPlannedDateAscStartTimeAsc(@Param("tripId") Long tripId);
 
     // Find activities for a specific trip and date
-    List<TripActivity> findByTripIdAndPlannedDateOrderByStartTimeAsc(Long tripId, LocalDate date);
+    @Query("SELECT ta FROM TripActivity ta LEFT JOIN FETCH ta.activity WHERE ta.trip.id = :tripId AND ta.plannedDate = :date ORDER BY ta.startTime ASC")
+    List<TripActivity> findByTripIdAndPlannedDateOrderByStartTimeAsc(@Param("tripId") Long tripId, @Param("date") LocalDate date);
 
     // Find activities for a trip within date range
     @Query("SELECT ta FROM TripActivity ta WHERE ta.trip.id = :tripId AND " +
@@ -33,29 +34,57 @@ public interface TripActivityRepository extends JpaRepository<TripActivity, Long
             @Param("endDate") LocalDate endDate
     );
 
+    // Fixed conflict detection - same date only, with null safety
     default List<TripActivity> findConflictingActivities(Long tripId, LocalDate plannedDate, LocalTime startTime, Integer durationMinutes) {
-        // Convert to datetime range
-        LocalDateTime proposedStart = LocalDateTime.of(plannedDate, startTime);
-        LocalDateTime proposedEnd = proposedStart.plusMinutes(durationMinutes);
+        // Get activities only on the same date to avoid false positives
+        List<TripActivity> sameDateActivities = findByTripIdAndPlannedDateOrderByStartTimeAsc(tripId, plannedDate);
 
-        // Get all activities that might conflict (same trip, overlapping date range)
-        LocalDate dayBefore = plannedDate.minusDays(1);
-        LocalDate dayAfter = plannedDate.plusDays(1);
-        List<TripActivity> potentialConflicts = findByTripIdAndDateRange(tripId, dayBefore, dayAfter);
+        // Calculate proposed end time
+        LocalTime proposedEndTime = startTime.plusMinutes(durationMinutes);
 
-        // Filter to actual conflicts
-        return potentialConflicts.stream()
+        // Filter to actual time conflicts
+        return sameDateActivities.stream()
                 .filter(activity -> {
-                    LocalDateTime activityStart = LocalDateTime.of(activity.getPlannedDate(), activity.getStartTime());
-                    LocalDateTime activityEnd = activityStart.plusMinutes(activity.getDurationMinutes());
+                    // Skip activities with null times
+                    if (activity.getStartTime() == null) return false;
 
-                    // Check if datetime ranges overlap
-                    return proposedStart.isBefore(activityEnd) && proposedEnd.isAfter(activityStart);
+                    // Handle null duration gracefully
+                    Integer activityDuration = activity.getDurationMinutes();
+                    if (activityDuration == null) {
+                        // Try to get from activity definition
+                        if (activity.getActivity() != null && activity.getActivity().getDurationMinutes() != null) {
+                            activityDuration = activity.getActivity().getDurationMinutes();
+                        } else {
+                            activityDuration = 60; // Default 1 hour
+                        }
+                    }
+
+                    LocalTime activityStart = activity.getStartTime();
+                    LocalTime activityEnd = activityStart.plusMinutes(activityDuration);
+
+                    // Check if time ranges overlap on the same date
+                    return startTime.isBefore(activityEnd) && proposedEndTime.isAfter(activityStart);
                 })
                 .toList();
     }
 
+    // Fixed conflict detection excluding specific activity (for updates)
+    default List<TripActivity> findConflictingActivitiesExcluding(Long tripId, LocalDate plannedDate,
+                                                                  LocalTime startTime, Integer durationMinutes,
+                                                                  Long excludeActivityId) {
+        List<TripActivity> conflicts = findConflictingActivities(tripId, plannedDate, startTime, durationMinutes);
+
+        // Remove the excluded activity
+        return conflicts.stream()
+                .filter(conflict -> !conflict.getId().equals(excludeActivityId))
+                .toList();
+    }
+
     default boolean hasTimeConflict(Long tripId, LocalDate plannedDate, LocalTime startTime, Integer durationMinutes) {
+        // Only check conflicts if we have valid time data
+        if (startTime == null || durationMinutes == null || durationMinutes <= 0) {
+            return false;
+        }
         return !findConflictingActivities(tripId, plannedDate, startTime, durationMinutes).isEmpty();
     }
 
@@ -80,5 +109,4 @@ public interface TripActivityRepository extends JpaRepository<TripActivity, Long
     @Transactional
     @Query("DELETE FROM TripActivity ta WHERE ta.trip.id = :tripId AND ta.activity.destination.id = :destinationId")
     void deleteByTripIdAndActivityDestinationId(@Param("tripId") Long tripId, @Param("destinationId") Long destinationId);
-
 }

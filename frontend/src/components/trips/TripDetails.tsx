@@ -12,6 +12,30 @@ export function TripDetails({ trip }: TripDetailsInfoProps) {
     );
   };
 
+  const getDaysUntilTrip = () => {
+    const today = new Date();
+    const startDate = new Date(trip.startDate);
+    const daysUntil = Math.ceil(
+      (startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysUntil > 0) {
+      return `${daysUntil} days away`;
+    } else if (daysUntil === 0) {
+      return 'Starts today!';
+    } else {
+      const endDate = new Date(trip.endDate);
+      const daysFromEnd = Math.ceil(
+        (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysFromEnd >= 0) {
+        return 'Trip in progress';
+      } else {
+        return 'Trip completed';
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow mb-8">
       <div className="p-6">
@@ -35,10 +59,8 @@ export function TripDetails({ trip }: TripDetailsInfoProps) {
           )}
 
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Status</h3>
-            <p className="text-sm text-gray-900 capitalize">
-              {trip.status.toLowerCase()}
-            </p>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Timeline</h3>
+            <p className="text-sm text-gray-900">{getDaysUntilTrip()}</p>
           </div>
 
           <div>

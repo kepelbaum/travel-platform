@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestController
@@ -26,11 +27,20 @@ public class TripActivityController {
             @RequestParam Long activityId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plannedDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
-            @RequestParam(required = false) Integer durationMinutes) {
+            @RequestParam(required = false) Integer durationMinutes,
+            @RequestParam(required = false) String notes) {
 
-        TripActivity tripActivity = tripActivityService.scheduleActivity(
-                tripId, activityId, plannedDate, startTime, durationMinutes);
-        return ResponseEntity.status(HttpStatus.CREATED).body(tripActivity);
+        try {
+            TripActivity tripActivity = tripActivityService.scheduleActivity(
+                    tripId, activityId, plannedDate, startTime, durationMinutes);
+            if (notes != null && !notes.trim().isEmpty()) {
+                tripActivity.setNotes(notes);
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(tripActivity);
+        } catch (RuntimeException e) {
+            System.err.println("Validation failed: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/trip/{tripId}")
@@ -47,15 +57,6 @@ public class TripActivityController {
         return ResponseEntity.ok(activities);
     }
 
-    @GetMapping("/trip/{tripId}/date-range")
-    public ResponseEntity<List<TripActivity>> getActivitiesInDateRange(
-            @PathVariable Long tripId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<TripActivity> activities = tripActivityService.getActivitiesInDateRange(tripId, startDate, endDate);
-        return ResponseEntity.ok(activities);
-    }
-
     @PutMapping("/{tripActivityId}")
     public ResponseEntity<TripActivity> updateScheduledActivity(
             @PathVariable Long tripActivityId,
@@ -66,6 +67,11 @@ public class TripActivityController {
             @RequestParam(required = false) String customName,
             @RequestParam(required = false) String customDescription,
             @RequestParam(required = false) Double customEstimatedCost) {
+
+        // Debug logging for timezone issues
+        System.out.println("Update activity - ID: " + tripActivityId);
+        System.out.println("Received parameters - Date: " + plannedDate + ", Time: " + startTime + ", Duration: " + durationMinutes);
+        System.out.println("Server timezone: " + ZoneId.systemDefault());
 
         TripActivity tripActivity = tripActivityService.updateScheduledActivity(
                 tripActivityId, plannedDate, startTime, durationMinutes, notes,
@@ -82,16 +88,18 @@ public class TripActivityController {
             @RequestParam Double customEstimatedCost,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plannedDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
-            @RequestParam Integer durationMinutes) {
+            @RequestParam Integer durationMinutes,
+            @RequestParam(required = false) String timezone) {
 
         TripActivity tripActivity = tripActivityService.scheduleCustomActivity(
                 tripId, customName, customCategory, customDescription, customEstimatedCost,
-                plannedDate, startTime, durationMinutes);
+                plannedDate, startTime, durationMinutes, timezone);
         return ResponseEntity.status(HttpStatus.CREATED).body(tripActivity);
     }
 
     @DeleteMapping("/{tripActivityId}")
     public ResponseEntity<Void> removeActivityFromTrip(@PathVariable Long tripActivityId) {
+        System.out.println("Delete activity - ID: " + tripActivityId);
         tripActivityService.removeActivityFromTrip(tripActivityId);
         return ResponseEntity.noContent().build();
     }

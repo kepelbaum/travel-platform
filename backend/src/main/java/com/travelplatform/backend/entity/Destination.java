@@ -24,6 +24,9 @@ public class Destination {
     @NotBlank
     private String country;
 
+    @Column(name = "timezone")
+    private String timezone;
+
     @Column(precision = 10, scale = 7)
     private BigDecimal latitude;
 
@@ -94,6 +97,9 @@ public class Destination {
         activities.remove(activity);
         activity.setDestination(null);
     }
+
+    public String getTimezone() { return timezone; }
+    public void setTimezone(String timezone) { this.timezone = timezone; }
 }
 
 

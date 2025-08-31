@@ -257,6 +257,7 @@ export const tripActivitiesApi = {
     plannedDate: string;
     startTime: string;
     durationMinutes: number;
+    notes?: string;
   }) => {
     const params = new URLSearchParams({
       tripId: data.tripId.toString(),
@@ -265,6 +266,9 @@ export const tripActivitiesApi = {
       startTime: data.startTime,
       durationMinutes: data.durationMinutes.toString(),
     });
+    if (data.notes) {
+      params.append('notes', data.notes);
+    }
     return apiClient.post<TripActivity>(
       `/trip-activities/schedule?${params}`,
       {}

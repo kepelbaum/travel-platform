@@ -12,6 +12,7 @@ com/travelplatform/backend/controller/AuthController.class
 com/travelplatform/backend/dto/ErrorResponse.class
 com/travelplatform/backend/controller/TripController.class
 com/travelplatform/backend/util/ActivityDurationUtils.class
+com/travelplatform/backend/service/TimezonePopulationService.class
 com/travelplatform/backend/config/GlobalExceptionHandler.class
 com/travelplatform/backend/exception/TripActivityNotFoundException.class
 com/travelplatform/backend/exception/TripNotFoundException.class

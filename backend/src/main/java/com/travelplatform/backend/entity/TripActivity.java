@@ -6,9 +6,7 @@ import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 
 @Entity
 @Table(name = "trip_activities", indexes = {
@@ -28,10 +26,12 @@ public class TripActivity {
     @JsonIgnore
     private Trip trip;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "activity_id", nullable = true)
-    @JsonIgnore
     private Activity activity;
+
+    @Column(name = "timezone")
+    private String timezone;
 
     @Column(name = "custom_name")
     private String customName;
@@ -69,13 +69,30 @@ public class TripActivity {
 
     public TripActivity() {}
 
-    public TripActivity(Trip trip, Activity activity, LocalDate plannedDate, LocalTime startTime, Integer durationMinutes) {
+    public TripActivity(Trip trip, Activity activity, LocalDate plannedDate, LocalTime startTime, Integer durationMinutes, String timezone) {
         this.trip = trip;
         this.activity = activity;
         this.plannedDate = plannedDate;
         this.startTime = startTime;
+        this.timezone = timezone;
         this.durationMinutes = durationMinutes;
         this.createdAt = LocalDateTime.now();
+    }
+
+
+    public ZonedDateTime getZonedStartDateTime() {
+        if (plannedDate == null || startTime == null || timezone == null) {
+            return null;
+        }
+        return ZonedDateTime.of(plannedDate, startTime, ZoneId.of(timezone));
+    }
+
+    public ZonedDateTime getZonedEndDateTime() {
+        ZonedDateTime start = getZonedStartDateTime();
+        if (start == null || durationMinutes == null) {
+            return null;
+        }
+        return start.plusMinutes(durationMinutes);
     }
 
     @PrePersist
@@ -161,4 +178,7 @@ public class TripActivity {
     public void setCustomEstimatedCost(Double customEstimatedCost) {
         this.customEstimatedCost = customEstimatedCost;
     }
+
+    public String getTimezone() { return timezone; }
+    public void setTimezone(String timezone) { this.timezone = timezone; }
 }

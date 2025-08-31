@@ -15,6 +15,7 @@ import ActivityBrowser from '@/components/activities/ActivityBrowser';
 import TripTimeline from '@/components/trip-activities/TripTimeline';
 import { useTripPlanningStore } from '@/store/tripPlanning';
 import { getCountryFlag } from '@/lib/utils/CountryFlagHelper';
+import { BudgetTracker } from '@/components/ui/BudgetTracker';
 
 interface TripDetailsPageProps {
   params: Promise<{
@@ -89,7 +90,10 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+
+    return date.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
@@ -376,7 +380,12 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
             </div>
           )}
 
-          {activeTab === 'timeline' && <TripTimeline tripId={tripId} />}
+          {activeTab === 'timeline' && trip && (
+            <div className="space-y-6">
+              <BudgetTracker tripId={tripId} trip={trip} />
+              <TripTimeline tripId={tripId} trip={trip} />
+            </div>
+          )}
 
           {activeTab === 'activities' && (
             <div>
