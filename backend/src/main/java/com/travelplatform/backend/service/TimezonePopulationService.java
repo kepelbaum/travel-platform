@@ -4,9 +4,7 @@ import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.repository.DestinationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.HashMap;
 import java.util.List;
@@ -129,12 +127,5 @@ public class TimezonePopulationService implements CommandLineRunner {
         }
 
         return "UTC";
-    }
-
-    // Manual method we can call via API endpoint for testing
-    @PostMapping("/admin/populate-timezones")
-    public ResponseEntity<String> manualPopulate() {
-        populateDestinationTimezones();
-        return ResponseEntity.ok("Timezone population completed");
     }
 }

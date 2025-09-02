@@ -4,7 +4,7 @@ import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.entity.Trip;
 import com.travelplatform.backend.entity.TripActivity;
-import com.travelplatform.backend.exception.TripActivityNotFoundException;
+import com.travelplatform.backend.exception.*;
 import com.travelplatform.backend.repository.ActivityRepository;
 import com.travelplatform.backend.repository.TripActivityRepository;
 import com.travelplatform.backend.repository.TripRepository;
@@ -32,23 +32,23 @@ public class TripActivityService {
     private ActivityRepository activityRepository;
 
     public TripActivity scheduleActivity(Long tripId, Long activityId, LocalDate plannedDate,
-                                         LocalTime startTime, Integer durationMinutes) {
+                                         LocalTime startTime, Integer durationMinutes, String notes) {
 
         Optional<Trip> tripOpt = tripRepository.findById(tripId);
         if (tripOpt.isEmpty()) {
-            throw new RuntimeException("Trip not found with id: " + tripId);
+            throw new TripNotFoundException("Trip not found with id: " + tripId);
         }
 
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
         if (activityOpt.isEmpty()) {
-            throw new RuntimeException("Activity not found with id: " + activityId);
+            throw new ActivityNotFoundException(activityId);
         }
 
         Trip trip = tripOpt.get();
         Activity activity = activityOpt.get();
 
         if (plannedDate.isBefore(trip.getStartDate()) || plannedDate.isAfter(trip.getEndDate())) {
-            throw new RuntimeException(String.format(
+            throw new TripDateValidationException(String.format(
                     "Activity date %s is outside trip dates (%s to %s)",
                     plannedDate, trip.getStartDate(), trip.getEndDate()));
         }
@@ -70,11 +70,17 @@ public class TripActivityService {
                     tripId, plannedDate, startTime, durationMinutes, activityTimezone, null);
 
             if (!conflicts.isEmpty()) {
-                throw new RuntimeException(buildConflictMessage(conflicts));
+                throw new TripActivityConflictException(buildConflictMessage(conflicts));
             }
         }
 
         TripActivity tripActivity = new TripActivity(trip, activity, plannedDate, startTime, durationMinutes, activityTimezone);
+
+        // Set notes if provided
+        if (notes != null && !notes.trim().isEmpty()) {
+            tripActivity.setNotes(notes);
+        }
+
         return tripActivityRepository.save(tripActivity);
     }
 
@@ -110,7 +116,7 @@ public class TripActivityService {
                         tripActivity.getTrip().getId(), newDate, newStartTime, newDuration, timezone, tripActivityId);
 
                 if (!conflicts.isEmpty()) {
-                    throw new RuntimeException(buildConflictMessage(conflicts));
+                    throw new TripActivityConflictException(buildConflictMessage(conflicts));
                 }
             }
 
@@ -126,7 +132,8 @@ public class TripActivityService {
             if (customDescription != null) tripActivity.setCustomDescription(customDescription);
             if (customEstimatedCost != null) tripActivity.setCustomEstimatedCost(customEstimatedCost);
         }
-        if (notes != null) tripActivity.setNotes(notes);
+
+        tripActivity.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
 
         return tripActivityRepository.save(tripActivity);
     }
@@ -253,7 +260,7 @@ public class TripActivityService {
 
         Optional<Trip> tripOpt = tripRepository.findById(tripId);
         if (tripOpt.isEmpty()) {
-            throw new RuntimeException("Trip not found with id: " + tripId);
+            throw new TripNotFoundException(tripId);
         }
 
         Trip trip = tripOpt.get();
@@ -272,7 +279,7 @@ public class TripActivityService {
                     tripId, plannedDate, startTime, durationMinutes, timezone, null);
 
             if (!conflicts.isEmpty()) {
-                throw new RuntimeException(buildConflictMessage(conflicts));
+                throw new TripActivityConflictException(buildConflictMessage(conflicts));
             }
         }
 
@@ -321,7 +328,7 @@ public class TripActivityService {
     public TripActivity updateActualCost(Long tripActivityId, Integer actualCost) {
         Optional<TripActivity> tripActivityOpt = tripActivityRepository.findById(tripActivityId);
         if (tripActivityOpt.isEmpty()) {
-            throw new RuntimeException("Scheduled activity not found with id: " + tripActivityId);
+            throw new TripActivityNotFoundException(tripActivityId);
         }
 
         TripActivity tripActivity = tripActivityOpt.get();

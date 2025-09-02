@@ -86,7 +86,7 @@ public class TripService {
                 .anyMatch(d -> d.getId().equals(destinationId));
 
         if (!destinationExists) {
-            throw new RuntimeException("Destination not found in this trip");
+            throw new DestinationNotFoundException(destinationId);
         }
 
         // Delete all trip activities for this destination first

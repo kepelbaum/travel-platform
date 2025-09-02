@@ -10,7 +10,6 @@ import java.util.List;
 
 @Repository
 public interface DestinationRepository extends JpaRepository<Destination, Long> {
-    List<Destination> findByNameContainingIgnoreCase(String name);
     List<Destination> findByCountryIgnoreCase(String country);
 
     @Query("SELECT DISTINCT d.country FROM Destination d ORDER BY d.country")

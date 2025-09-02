@@ -1,5 +1,4 @@
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/TravelPlatformApplication.java
-/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/config/CacheConfig.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/config/DataLoader.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/config/GlobalExceptionHandler.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/config/JwtAuthenticationFilter.java
@@ -8,9 +7,9 @@
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/ActivityController.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/AuthController.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/DestinationController.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/TestController.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/TripActivityController.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/TripController.java
-/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/controller/UtilsController.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/dto/ActivityPageResponse.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/dto/AuthResponse.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/dto/ErrorResponse.java
@@ -23,10 +22,16 @@
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/entity/Trip.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/entity/TripActivity.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/entity/User.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/ActivityMissingPlaceIdException.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/ActivityNotFoundException.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/DestinationNotFoundException.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/GooglePlacesApiException.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/InvalidCredentialsException.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/TripActivityConflictException.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/TripActivityNotFoundException.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/TripDateValidationException.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/TripNotFoundException.java
+/home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/exception/UserAlreadyExistsException.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/repository/ActivityRepository.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/repository/DestinationRepository.java
 /home/kepelbaum/repos/travel-platform/backend/src/main/java/com/travelplatform/backend/repository/TripActivityRepository.java

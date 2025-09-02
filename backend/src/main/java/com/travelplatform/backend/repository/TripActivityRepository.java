@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TripActivityRepository extends JpaRepository<TripActivity, Long> {
@@ -68,18 +67,6 @@ public interface TripActivityRepository extends JpaRepository<TripActivity, Long
                 .toList();
     }
 
-    // Fixed conflict detection excluding specific activity (for updates)
-    default List<TripActivity> findConflictingActivitiesExcluding(Long tripId, LocalDate plannedDate,
-                                                                  LocalTime startTime, Integer durationMinutes,
-                                                                  Long excludeActivityId) {
-        List<TripActivity> conflicts = findConflictingActivities(tripId, plannedDate, startTime, durationMinutes);
-
-        // Remove the excluded activity
-        return conflicts.stream()
-                .filter(conflict -> !conflict.getId().equals(excludeActivityId))
-                .toList();
-    }
-
     default boolean hasTimeConflict(Long tripId, LocalDate plannedDate, LocalTime startTime, Integer durationMinutes) {
         // Only check conflicts if we have valid time data
         if (startTime == null || durationMinutes == null || durationMinutes <= 0) {
@@ -90,8 +77,6 @@ public interface TripActivityRepository extends JpaRepository<TripActivity, Long
 
     // Check if specific activity is already scheduled for trip
     boolean existsByTripIdAndActivityId(Long tripId, Long activityId);
-
-    Optional<TripActivity> findByTripIdAndActivityId(Long tripId, Long activityId);
 
     @Query("SELECT COALESCE(SUM(CASE WHEN ta.activity IS NULL THEN ta.customEstimatedCost ELSE a.estimatedCost END), 0) " +
             "FROM TripActivity ta LEFT JOIN ta.activity a WHERE ta.trip.id = :tripId")

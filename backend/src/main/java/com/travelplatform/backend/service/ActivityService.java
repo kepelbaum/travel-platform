@@ -4,6 +4,7 @@ import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
+import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.repository.ActivityRepository;
 import com.travelplatform.backend.repository.DestinationRepository;
 import jakarta.transaction.Transactional;
@@ -171,6 +172,7 @@ public class ActivityService {
         return getActivitiesWithPagination(destinationId, category, null, page, size);
     }
 
+    //TODO: To be revisited/implemented in a future update
 //    @CacheEvict(value = {"destinationActivities", "categoryActivities", "activityById"}, allEntries = true)
 //    public Activity createCustomActivity(Long destinationId, String name, String category,
 //                                         Integer durationMinutes, Double costEstimate, String description) {
@@ -201,27 +203,6 @@ public class ActivityService {
 //        return activityRepository.save(activity);
 //    }
 //
-//    public Activity createFromGooglePlaces(Long destinationId, String placeId, String name,
-//                                           String category, String description) {
-//        Optional<Activity> existingActivity = activityRepository.findByPlaceId(placeId);
-//        if (existingActivity.isPresent()) {
-//            return existingActivity.get();
-//        }
-//
-//        Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
-//        if (destinationOpt.isEmpty()) {
-//            throw new DestinationNotFoundException("Destination not found with id: " + destinationId);
-//        }
-//
-//        Destination destination = destinationOpt.get();
-//        Activity activity = Activity.createFromGooglePlaces(placeId, name, category, destination);
-//        activity.setDescription(description);
-//
-//        activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(category));
-//        activity.setEstimatedCost(ActivityDurationUtils.getDefaultCostEstimate(category));
-//
-//        return activityRepository.save(activity);
-//    }
 
     @Cacheable(value = "activityById", key = "#id")
     public Optional<Activity> getActivityById(Long id) {
@@ -272,7 +253,6 @@ public class ActivityService {
 
     /**
      * Save activities from Google Places API, avoiding duplicates
-     * Enhanced with better logging for cache monitoring
      */
     @Transactional
     public List<Activity> saveActivitiesFromPlaces(List<Activity> activities, Long destinationId) {
@@ -280,7 +260,7 @@ public class ActivityService {
 
         Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
         if (destinationOpt.isEmpty()) {
-            throw new RuntimeException("Destination not found with id: " + destinationId);
+            throw new DestinationNotFoundException(destinationId);
         }
         Destination destination = destinationOpt.get();
 
@@ -347,37 +327,6 @@ public class ActivityService {
         return savedActivities;
     }
 
-    private boolean isSimpleNameMatch(String name1, String name2) {
-        String[] words1 = name1.toLowerCase().split(" ");
-        String[] words2 = name2.toLowerCase().split(" ");
-        // Simple: if first two words match, consider it the same
-        return words1[0].equals(words2[0]) &&
-                (words1.length > 1 && words2.length > 1 ? words1[1].equals(words2[1]) : true);
-    }
-
-    private boolean haveSimilarCoordinates(Activity activity1, Activity activity2) {
-        if (activity1.getLatitude() == null || activity1.getLongitude() == null ||
-                activity2.getLatitude() == null || activity2.getLongitude() == null) {
-            return false; // Can't compare without coordinates
-        }
-
-        double lat1 = activity1.getLatitude().doubleValue();
-        double lon1 = activity1.getLongitude().doubleValue();
-        double lat2 = activity2.getLatitude().doubleValue();
-        double lon2 = activity2.getLongitude().doubleValue();
-
-        // Calculate distance in kilometers
-
-        double distance = calculateDistance(lat1, lon1, lat2, lon2);
-
-        // Consider "similar" if within 500 meters
-        return distance < 0.5;
-    }
-
-    public List<Activity> getActivitiesByCity(String cityName) {
-        return activityRepository.findByCityNameIgnoreCase(cityName);
-    }
-
     public Activity enhanceActivityWithPlacesData(Activity existing, Activity placesData) {
         if (placesData.getPhotoUrl() != null) {
             existing.setPhotoUrl(placesData.getPhotoUrl());
@@ -441,129 +390,11 @@ public class ActivityService {
         }
 
         public long getTotalActivities() { return totalActivities; }
-        public long getGooglePlacesActivities() { return googlePlacesActivities; }
-        public long getCustomActivities() { return customActivities; }
+        //TODO: Could reuse later, custom activities to be implemented in a future update
+//        public long getCustomActivities() { return customActivities; }
         public LocalDateTime getLastRefresh() { return lastRefresh; }
         public boolean isCacheStale() { return isCacheStale; }
         public int getCacheTtlDays() { return cacheTtlDays; }
-    }
-
-    private String extractCoreActivityName(String fullName) {
-        // Remove common suffixes/prefixes that create variations
-        String core = fullName
-                .replaceAll("(?i)\\s+(main|observatory|tower|building|center|centre)\\s*$", "")
-                .replaceAll("(?i)^(the|a|an)\\s+", "")
-                .trim();
-
-        // Return at least the first major word(s)
-        String[] words = core.split("\\s+");
-        return words.length > 0 ? words[0] : fullName;
-    }
-
-    private Activity findMostSimilarActivity(Activity newActivity, List<Activity> candidates) {
-        Activity mostSimilar = null;
-        double highestSimilarity = 0.0;
-
-        for (Activity candidate : candidates) {
-            double similarity = calculateNameSimilarity(newActivity.getName(), candidate.getName());
-            if (similarity > highestSimilarity && similarity > 0.7) { // 70% similarity threshold
-                highestSimilarity = similarity;
-                mostSimilar = candidate;
-            }
-        }
-
-        return mostSimilar;
-    }
-
-    private double calculateNameSimilarity(String name1, String name2) {
-        // Simple similarity calculation (could use more sophisticated algorithms)
-        String lower1 = name1.toLowerCase();
-        String lower2 = name2.toLowerCase();
-
-        // Exact match
-        if (lower1.equals(lower2)) return 1.0;
-
-        // Check if one contains the other
-        if (lower1.contains(lower2) || lower2.contains(lower1)) {
-            return 0.8;
-        }
-
-        // Check common words
-        String[] words1 = lower1.split("\\s+");
-        String[] words2 = lower2.split("\\s+");
-
-        int commonWords = 0;
-        for (String word1 : words1) {
-            for (String word2 : words2) {
-                if (word1.equals(word2) && word1.length() > 2) { // Ignore short words like "of", "the"
-                    commonWords++;
-                    break;
-                }
-            }
-        }
-
-        return (double) commonWords / Math.max(words1.length, words2.length);
-    }
-
-    private boolean areLikelySamePlace(Activity activity1, Activity activity2) {
-        // Additional checks beyond name similarity
-
-        // If both have coordinates, check distance
-        if (activity1.getLatitude() != null && activity1.getLongitude() != null &&
-                activity2.getLatitude() != null && activity2.getLongitude() != null) {
-
-            double distance = calculateDistance(
-                    activity1.getLatitude().doubleValue(), activity1.getLongitude().doubleValue(),
-                    activity2.getLatitude().doubleValue(), activity2.getLongitude().doubleValue()
-            );
-
-            // If they're within 100 meters, likely same place
-            if (distance < 0.1) return true;
-            // If they're more than 1km apart, definitely different places
-            if (distance > 1.0) return false;
-        }
-
-        // Check if addresses are similar
-        if (activity1.getAddress() != null && activity2.getAddress() != null) {
-            double addressSimilarity = calculateNameSimilarity(activity1.getAddress(), activity2.getAddress());
-            if (addressSimilarity > 0.8) return true;
-        }
-
-        // Same category is a good sign
-        if (activity1.getCategory() != null && activity2.getCategory() != null) {
-            return activity1.getCategory().equals(activity2.getCategory());
-        }
-
-        return false;
-    }
-
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        // Haversine formula for distance in kilometers
-        final int R = 6371; // Radius of the earth in km
-
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
-    }
-
-    private boolean shouldUpdateWithBetterData(Activity existing, Activity newData) {
-        return calculateDataCompleteness(newData) > calculateDataCompleteness(existing);
-    }
-
-    private int calculateDataCompleteness(Activity activity) {
-        int score = 0;
-        if (activity.getDescription() != null && !activity.getDescription().isEmpty()) score += 2; // Description is valuable
-        if (activity.getPhotoUrl() != null) score++;
-        if (activity.getRating() != null) score++;
-        if (activity.getAddress() != null) score++;
-        if (activity.getOpeningHours() != null) score++;
-        if (activity.getPlaceId() != null) score++; // placeId is very valuable for future updates
-        return score;
     }
 
     private ActivityPageResponse getActivitiesWithPagination(Long destinationId, String category, String searchTerm, int page, int size) {
@@ -632,7 +463,7 @@ public class ActivityService {
     }
     private List<Activity> fetchFromGooglePlaces(Long destinationId, String category, String searchTerm) {
         Destination destination = destinationRepository.findById(destinationId)
-                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
+                .orElseThrow(() -> new DestinationNotFoundException(destinationId));
 
         String cityName = destination.getName();
         String country = destination.getCountry();

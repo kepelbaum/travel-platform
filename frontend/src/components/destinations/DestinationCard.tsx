@@ -30,7 +30,6 @@ export function DestinationCard({ destination }: { destination: Destination }) {
     },
     onError: (error) => {
       console.error('Failed to add destination:', error);
-      // TODO: Show toast notification
     },
   });
 
@@ -48,7 +47,6 @@ export function DestinationCard({ destination }: { destination: Destination }) {
     },
     onError: (error) => {
       console.error('Failed to remove destination:', error);
-      // TODO: Show toast notification
     },
   });
 
@@ -64,7 +62,6 @@ export function DestinationCard({ destination }: { destination: Destination }) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow h-[420px] flex flex-col">
-      {/* Fixed image display with bottom gradient text */}
       <div className="h-48 relative flex-shrink-0">
         {destination.imageUrl ? (
           <div className="relative w-full h-full">
@@ -72,9 +69,6 @@ export function DestinationCard({ destination }: { destination: Destination }) {
               src={destination.imageUrl}
               alt={destination.name}
               className="absolute inset-0 w-full h-full object-cover"
-              onLoad={() =>
-                console.log(`Image loaded successfully for ${destination.name}`)
-              }
               onError={(e) =>
                 console.log(`Image failed to load for ${destination.name}:`, e)
               }

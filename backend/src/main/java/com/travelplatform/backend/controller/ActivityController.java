@@ -2,6 +2,8 @@ package com.travelplatform.backend.controller;
 
 import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
+import com.travelplatform.backend.exception.ActivityMissingPlaceIdException;
+import com.travelplatform.backend.exception.GooglePlacesApiException;
 import com.travelplatform.backend.service.ActivityService;
 import com.travelplatform.backend.service.GooglePlacesService;
 import org.slf4j.Logger;
@@ -123,6 +125,7 @@ public class ActivityController {
         return ResponseEntity.ok(activities);
     }
 
+    //TODO: To be implemented in a future update
 //    @PostMapping("/destination/{destinationId}/custom")
 //    public ResponseEntity<Activity> createCustomActivity(
 //            @PathVariable Long destinationId,
@@ -213,7 +216,7 @@ public class ActivityController {
 
         Activity activity = activityOpt.get();
         if (activity.getPlaceId() == null) {
-            throw new RuntimeException("Activity has no Google Places ID");
+            throw new ActivityMissingPlaceIdException("Activity has no Google Places ID");
         }
 
         Activity enhancedActivity = googlePlacesService.getPlaceDetails(activity.getPlaceId());
@@ -221,7 +224,7 @@ public class ActivityController {
             activity = activityService.enhanceActivityWithPlacesData(activity, enhancedActivity);
             return ResponseEntity.ok(activity);
         } else {
-            throw new RuntimeException("Could not fetch Places data");
+            throw new GooglePlacesApiException("Could not fetch Places data");
         }
     }
 

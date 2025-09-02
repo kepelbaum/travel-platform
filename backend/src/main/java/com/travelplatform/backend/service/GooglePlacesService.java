@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
+import com.travelplatform.backend.exception.DestinationNotFoundException;
 import com.travelplatform.backend.repository.DestinationRepository;
 import com.travelplatform.backend.util.ActivityDurationUtils;
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class GooglePlacesService {
      */
     public List<Activity> searchActivitiesForDestination(Long destinationId, String type) {
         Destination destination = destinationRepository.findById(destinationId)
-                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
+                .orElseThrow(() -> new DestinationNotFoundException(destinationId));
 
         String cityName = destination.getName();
         String country = destination.getCountry();
@@ -102,36 +103,6 @@ public class GooglePlacesService {
         } catch (Exception e) {
             logger.error("Error getting place details for placeId: {}", placeId, e);
             return null;
-        }
-    }
-
-    /**
-     * Search for specific types of places (restaurants, museums, etc.)
-     */
-    public List<Activity> searchPlacesByType(Long destinationId, String placeType) {
-        try {
-            Destination destination = destinationRepository.findById(destinationId)
-                    .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
-
-            String cityName = destination.getName();
-            String query = placeType + " in " + cityName;
-
-            String url = UriComponentsBuilder.fromHttpUrl(PLACES_API_BASE_URL + TEXT_SEARCH_ENDPOINT)
-                    .queryParam("query", query)
-                    .queryParam("key", apiKey)
-                    .queryParam("type", placeType)
-                    .queryParam("language", "en")
-                    .build()
-                    .toUriString();
-
-            logger.info("Searching for {} in destination: {} ({})", placeType, destinationId, cityName);
-            String response = restTemplate.getForObject(url, String.class);
-
-            return parseActivitiesFromResponse(response);
-
-        } catch (Exception e) {
-            logger.error("Error searching for {} in destination: {}", placeType, destinationId, e);
-            return new ArrayList<>();
         }
     }
 
@@ -195,15 +166,9 @@ public class GooglePlacesService {
 
             String description = null;
 
-// Try editorial summary first
             if (json.has("editorial_summary") && json.get("editorial_summary").has("overview")) {
                 description = json.get("editorial_summary").get("overview").asText();
             }
-
-// Fallback to reviews if no editorial summary
-//            else if (json.has("reviews") && json.get("reviews").isArray() && json.get("reviews").size() > 0) {
-//                description = json.get("reviews").get(0).get("text").asText();
-//            }
 
             else {
                 description = "No description available.";
@@ -255,7 +220,7 @@ public class GooglePlacesService {
             }
 
             // Photo URL (get first photo if available)
-            if (json.has("photos") && json.get("photos").isArray() && json.get("photos").size() > 0) {
+            if (json.has("photos") && json.get("photos").isArray() && !json.get("photos").isEmpty()) {
                 String photoReference = json.get("photos").get(0).get("photo_reference").asText();
                 activity.setPhotoUrl(baseUrl + "/api/activities/photo/" + photoReference);
             }
@@ -376,33 +341,6 @@ public class GooglePlacesService {
         return "Other";
     }
 
-    public List<Activity> searchSpecificActivities(Long destinationId, String searchTerm) {
-        Destination destination = destinationRepository.findById(destinationId)
-                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
-
-        String query = searchTerm + " in " + destination.getName();
-        return performSingleSearch(query, destination);
-    }
-
-    public List<Activity> searchActivitiesByCategory(Long destinationId, String category) {
-        Destination destination = destinationRepository.findById(destinationId)
-                .orElseThrow(() -> new RuntimeException("Destination not found: " + destinationId));
-
-        String categoryQuery = getCategorySearchQuery(category, destination.getName());
-        return performSingleSearch(categoryQuery, destination);
-    }
-
-    private String getCategorySearchQuery(String category, String cityName) {
-        switch (category.toLowerCase()) {
-            case "museum": return "museums in " + cityName;
-            case "restaurant": return "restaurants in " + cityName;
-            case "park": return "parks in " + cityName;
-            case "entertainment": return "entertainment in " + cityName;
-            case "attraction": return "tourist attractions in " + cityName;
-            default: return category + " in " + cityName;
-        }
-    }
-
     public List<Activity> performSingleSearch(String query, Destination destination) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(PLACES_API_BASE_URL + TEXT_SEARCH_ENDPOINT)
                 .queryParam("query", query)
@@ -421,8 +359,13 @@ public class GooglePlacesService {
         logger.info("=== GOOGLE PLACES QUERY: {} ===", query);
         logger.info("=== LOCATION BIAS: {},{} ===", destination.getLatitude(), destination.getLongitude());
 
-        String response = restTemplate.getForObject(url, String.class);
-        return parseActivitiesFromResponse(response);
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            return parseActivitiesFromResponse(response);
+        } catch (Exception e) {
+            logger.error("Error calling Google Places API for query: {}", query, e);
+            return new ArrayList<>(); // Return empty list on API error
+        }
     }
 
     private double getDefaultCostByCategory(String category) {

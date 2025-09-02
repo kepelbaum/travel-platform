@@ -30,17 +30,10 @@ public class TripActivityController {
             @RequestParam(required = false) Integer durationMinutes,
             @RequestParam(required = false) String notes) {
 
-        try {
-            TripActivity tripActivity = tripActivityService.scheduleActivity(
-                    tripId, activityId, plannedDate, startTime, durationMinutes);
-            if (notes != null && !notes.trim().isEmpty()) {
-                tripActivity.setNotes(notes);
-            }
-            return ResponseEntity.status(HttpStatus.CREATED).body(tripActivity);
-        } catch (RuntimeException e) {
-            System.err.println("Validation failed: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
+        TripActivity tripActivity = tripActivityService.scheduleActivity(
+                tripId, activityId, plannedDate, startTime, durationMinutes, notes);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(tripActivity);
     }
 
     @GetMapping("/trip/{tripId}")

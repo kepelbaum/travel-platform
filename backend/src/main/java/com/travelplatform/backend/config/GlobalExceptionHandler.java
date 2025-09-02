@@ -1,10 +1,8 @@
 package com.travelplatform.backend.config;
 
 import com.travelplatform.backend.dto.ErrorResponse;
-import com.travelplatform.backend.exception.ActivityNotFoundException;
-import com.travelplatform.backend.exception.DestinationNotFoundException;
-import com.travelplatform.backend.exception.TripActivityNotFoundException;
-import com.travelplatform.backend.exception.TripNotFoundException;
+import com.travelplatform.backend.exception.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +38,42 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TripActivityConflictException.class)
+    public ResponseEntity<ErrorResponse> handleTripActivityConflict(TripActivityConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)  // 409 Conflict
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TripDateValidationException.class)
+    public ResponseEntity<ErrorResponse> handleTripDateValidation(TripDateValidationException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ActivityMissingPlaceIdException.class)
+    public ResponseEntity<ErrorResponse> handleActivityMissingPlaceId(ActivityMissingPlaceIdException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(GooglePlacesApiException.class)
+    public ResponseEntity<ErrorResponse> handleGooglePlacesApi(GooglePlacesApiException ex) {
+        return ResponseEntity.status(503) // Service Unavailable
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return ResponseEntity.status(409) // Conflict
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity.status(401) // Unauthorized
+                .body(new ErrorResponse("Invalid credentials"));
     }
 
     @ExceptionHandler(RuntimeException.class)

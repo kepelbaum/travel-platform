@@ -1,7 +1,6 @@
 package com.travelplatform.backend.repository;
 
 import com.travelplatform.backend.entity.Activity;
-import com.travelplatform.backend.entity.Destination;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,8 +26,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     List<Activity> findByDestinationIdAndIsCustomFalse(Long destinationId);
 
-    List<Activity> findByCategory(String category);
-
     @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId AND a.rating IS NOT NULL ORDER BY a.rating DESC")
     List<Activity> findTopRatedByDestination(@Param("destinationId") Long destinationId);
 
@@ -53,8 +50,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     long countByDestinationId(Long destinationId);
 
-    long countByDestinationIdAndCategory(Long destinationId, String category);
-
     // Find activities by city
     @Query("SELECT a FROM Activity a WHERE LOWER(a.destination.name) = LOWER(:cityName)")
     List<Activity> findByCityNameIgnoreCase(@Param("cityName") String cityName);
@@ -63,24 +58,7 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     @Query("SELECT DISTINCT a.category FROM Activity a WHERE a.category IS NOT NULL")
     List<String> findDistinctCategories();
 
-    // Find activities by category
-    List<Activity> findByCategoryIgnoreCase(String category);
-
-    // Find top-rated activities
-    @Query("SELECT a FROM Activity a WHERE a.rating IS NOT NULL ORDER BY a.rating DESC")
-    List<Activity> findTopRatedActivities(Pageable pageable);
-
-    // Find activities within budget
-    @Query("SELECT a FROM Activity a WHERE a.estimatedCost <= :maxCost")
-    List<Activity> findActivitiesWithinBudget(@Param("maxCost") Double maxCost);
-
     Optional<Activity> findByDestinationIdAndNameIgnoreCase(Long destinationId, String name);
-    Optional<Activity> findByDestinationAndNameIgnoreCase(Destination destination, String name);
-
-    @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId AND " +
-            "LOWER(a.name) LIKE LOWER(CONCAT('%', :namePattern, '%'))")
-    List<Activity> findByDestinationIdAndNameContaining(@Param("destinationId") Long destinationId,
-                                                        @Param("namePattern") String namePattern);
 
     @Query("SELECT a FROM Activity a WHERE a.destination.id = :destinationId " +
             "ORDER BY " +

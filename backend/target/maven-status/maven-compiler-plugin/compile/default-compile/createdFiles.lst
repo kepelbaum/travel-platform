@@ -1,6 +1,7 @@
 com/travelplatform/backend/service/GooglePlacesService.class
-com/travelplatform/backend/controller/UtilsController.class
+com/travelplatform/backend/exception/ActivityMissingPlaceIdException.class
 com/travelplatform/backend/dto/TripCostSummary.class
+com/travelplatform/backend/exception/InvalidCredentialsException.class
 com/travelplatform/backend/config/DataLoader.class
 com/travelplatform/backend/config/RestTemplateConfig.class
 com/travelplatform/backend/repository/DestinationRepository.class
@@ -10,6 +11,7 @@ com/travelplatform/backend/dto/LoginRequest.class
 com/travelplatform/backend/config/SecurityConfig.class
 com/travelplatform/backend/controller/AuthController.class
 com/travelplatform/backend/dto/ErrorResponse.class
+com/travelplatform/backend/exception/TripActivityConflictException.class
 com/travelplatform/backend/controller/TripController.class
 com/travelplatform/backend/util/ActivityDurationUtils.class
 com/travelplatform/backend/service/TimezonePopulationService.class
@@ -25,7 +27,6 @@ com/travelplatform/backend/config/JwtAuthenticationFilter.class
 com/travelplatform/backend/controller/ActivityController.class
 com/travelplatform/backend/util/UserSecurityUtil.class
 com/travelplatform/backend/service/CustomUserDetailsService.class
-com/travelplatform/backend/config/CacheConfig.class
 com/travelplatform/backend/entity/Activity.class
 com/travelplatform/backend/entity/Trip.class
 com/travelplatform/backend/exception/DestinationNotFoundException.class
@@ -33,15 +34,19 @@ com/travelplatform/backend/service/TripActivityService.class
 com/travelplatform/backend/service/ActivityService.class
 com/travelplatform/backend/dto/RegisterRequest.class
 com/travelplatform/backend/service/CostMultiplierService.class
+com/travelplatform/backend/exception/GooglePlacesApiException.class
 com/travelplatform/backend/dto/UserDto.class
 com/travelplatform/backend/controller/DestinationController.class
 com/travelplatform/backend/repository/ActivityRepository.class
 com/travelplatform/backend/service/JwtService.class
+com/travelplatform/backend/exception/UserAlreadyExistsException.class
 com/travelplatform/backend/service/TripService.class
 com/travelplatform/backend/dto/ActivityPageResponse.class
 com/travelplatform/backend/repository/TripActivityRepository.class
 com/travelplatform/backend/entity/TripActivity.class
 com/travelplatform/backend/TravelPlatformApplication.class
+com/travelplatform/backend/exception/TripDateValidationException.class
 com/travelplatform/backend/entity/Trip$TripStatus.class
+com/travelplatform/backend/controller/TestController.class
 com/travelplatform/backend/entity/Destination.class
 com/travelplatform/backend/service/AuthService.class

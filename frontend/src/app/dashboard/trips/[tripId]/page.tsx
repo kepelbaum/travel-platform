@@ -196,11 +196,11 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                   {trip.name}
                 </h1>
                 <div className="flex items-center mt-2 space-x-4">
-                  <span
+                  {/* <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(trip.status)}`}
                   >
                     {trip.status}
-                  </span>
+                  </span> */}
                   <span className="text-gray-500">
                     {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
                   </span>

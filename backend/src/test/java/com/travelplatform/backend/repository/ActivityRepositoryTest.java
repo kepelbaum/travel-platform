@@ -208,7 +208,6 @@ public class ActivityRepositoryTest {
 
     @Test
     public void testCountByDestinationId() {
-
         Destination paris = new Destination();
         paris.setName("Paris");
         paris.setCountry("France");
@@ -227,3 +226,4 @@ public class ActivityRepositoryTest {
         assertThat(activityRepository.countByDestinationId(london.getId())).isEqualTo(1);
     }
 }
+

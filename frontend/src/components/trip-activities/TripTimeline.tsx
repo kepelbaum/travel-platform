@@ -682,11 +682,17 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                           </div>
 
                           {/* Actions - only delete, no edit */}
-                          <div className="text-right">
+                          <div className="text-right space-y-1">
+                            <button
+                              onClick={() => handleEdit(tripActivity)}
+                              className="block w-full px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded border border-blue-200 transition-colors"
+                            >
+                              Edit
+                            </button>
                             <button
                               onClick={() => handleDelete(tripActivity)}
                               disabled={deleteMutation.isPending}
-                              className="px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded border border-red-200 disabled:opacity-50 transition-colors"
+                              className="block w-full px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded border border-red-200 disabled:opacity-50 transition-colors"
                             >
                               {deleteMutation.isPending
                                 ? 'Removing...'
