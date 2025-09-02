@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.travelplatform.backend.service.ActivityServiceTest$GooglePlacesIntegration
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.travelplatform.backend.service.ActivityServiceTest$GooglePlacesIntegration
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.165 s -- in com.travelplatform.backend.service.ActivityServiceTest$GooglePlacesIntegration

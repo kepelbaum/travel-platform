@@ -5,21 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import ActivityCard from './ActivityCard';
 import ActivityDetailsModal from './ActivityDetailsModal';
 import { Activity } from '@/types';
-import { activitiesApi } from '@/lib/api';
+import { activitiesApi, ActivitiesResponse } from '@/lib/api';
 
 interface ActivityBrowserProps {
   destinationId: number;
   tripId?: number;
-}
-
-interface ActivityResponse {
-  activities: Activity[];
-  count: number;
-  totalCount?: number;
-  hasMore?: boolean;
-  currentPage?: number;
-  source: string;
-  destination?: any;
 }
 
 export default function ActivityBrowser({
@@ -36,7 +26,7 @@ export default function ActivityBrowser({
   // Simple API call - get all activities, do all filtering on frontend
   const queryKey = ['activities', destinationId];
 
-  const queryFn = async (): Promise<ActivityResponse> => {
+  const queryFn = async (): Promise<ActivitiesResponse> => {
     return activitiesApi.getActivitiesSmart(destinationId);
   };
 
@@ -46,36 +36,54 @@ export default function ActivityBrowser({
   });
 
   const {
-    data: activityResponse,
+    data: ActivitiesResponse,
     isLoading,
     error,
     refetch,
-  } = useQuery<ActivityResponse>({
+  } = useQuery<ActivitiesResponse>({
     queryKey,
     queryFn,
     enabled: !!destinationId && destinationId !== undefined,
   });
 
-  const allActivities = activityResponse?.activities || [];
-  const destination = activityResponse?.destination || null;
+  const allActivities = ActivitiesResponse?.activities || [];
 
   // Frontend filtering and pagination
   const processedActivities = useMemo(() => {
     let filtered = allActivities;
 
-    // Apply category filter (both dropdown and quick filter buttons)
+    // Apply category filter
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(
         (activity: Activity) => activity.category === selectedCategory
       );
     }
 
-    // Apply search filter - only matches names that START with the search term
+    // Apply search filter - matches names that contain the search term
     if (searchQuery && searchQuery.length >= 2) {
       filtered = filtered.filter((activity: Activity) =>
-        activity.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+        activity.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+
+    // Sort by rating and popularity combination, then by name
+    filtered.sort((a, b) => {
+      const ratingA = a.rating || 0;
+      const ratingB = b.rating || 0;
+      const popularityA = a.userRatingsTotal || 0;
+      const popularityB = b.userRatingsTotal || 0;
+
+      // Calculate composite score: rating * log(popularity + 1)
+      // This balances quality vs popularity
+      const scoreA = ratingA * Math.log(popularityA + 1);
+      const scoreB = ratingB * Math.log(popularityB + 1);
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Higher score first
+      }
+
+      return a.name.localeCompare(b.name); // Alphabetical by name as tiebreaker
+    });
 
     // Calculate pagination
     const startIndex = (page - 1) * 20;

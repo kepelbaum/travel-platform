@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.travelplatform.backend.service.ActivityServiceTest
 -------------------------------------------------------------------------------
-Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.171 s -- in com.travelplatform.backend.service.ActivityServiceTest
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.257 s -- in com.travelplatform.backend.service.ActivityServiceTest

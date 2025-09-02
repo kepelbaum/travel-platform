@@ -131,15 +131,8 @@ export interface TripActivity {
   createdAt: string;
 }
 
-export interface ActivityResponse {
+export interface ActivitiesResponse {
   activities: Activity[];
-  count: number;
-  totalCount?: number;
-  hasMore?: boolean;
-  currentPage?: number;
-  source: string;
-  query?: string;
-  category?: string;
   cacheStats?: {
     totalActivities: number;
     lastRefresh: string;
@@ -148,26 +141,16 @@ export interface ActivityResponse {
   };
 }
 
-// Define proper parameter interfaces
-interface PaginationParams {
-  page?: number;
-  size?: number;
-}
-
-interface CategoryPaginationParams extends PaginationParams {
-  category?: string;
-}
-
 export const activitiesApi = {
   // Smart cached activities
   getActivitiesSmart: (destinationId: number) =>
-    apiClient.get<ActivityResponse>(
+    apiClient.get<ActivitiesResponse>(
       `/activities/destination/${destinationId}/smart`
     ),
 
   // Force refresh activities from Google Places
   refreshActivities: (destinationId: number) =>
-    apiClient.post<ActivityResponse>(
+    apiClient.post<ActivitiesResponse>(
       `/activities/destination/${destinationId}/refresh`,
       {}
     ),
@@ -216,36 +199,6 @@ export const activitiesApi = {
     return apiClient.post<Activity>(
       `/activities/destination/${destinationId}/custom?${params}`,
       {}
-    );
-  },
-
-  // Fixed paginated activities with proper typing
-  getActivitiesPaginated: (
-    destinationId: number,
-    params: CategoryPaginationParams = {}
-  ) => {
-    const category = params.category || 'all';
-    const queryParams = new URLSearchParams({
-      page: (params.page || 1).toString(),
-      size: (params.size || 20).toString(),
-    });
-    return apiClient.get<ActivityResponse>(
-      `/activities/destination/${destinationId}?${queryParams}`
-    );
-  },
-
-  searchActivitiesPaginated: (
-    destinationId: number,
-    query: string,
-    params: PaginationParams = {}
-  ) => {
-    const queryParams = new URLSearchParams({
-      query,
-      page: (params.page || 1).toString(),
-      size: (params.size || 20).toString(),
-    });
-    return apiClient.get<ActivityResponse>(
-      `/activities/destination/${destinationId}/search?${queryParams}`
     );
   },
 };

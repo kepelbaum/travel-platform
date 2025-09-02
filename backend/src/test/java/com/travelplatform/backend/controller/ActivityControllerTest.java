@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.travelplatform.backend.config.GlobalExceptionHandler;
-import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
@@ -51,7 +50,6 @@ class ActivityControllerTest {
 
     private Activity testActivity;
     private Destination testDestination;
-    private ActivityPageResponse mockPageResponse;
     private ActivityService.CacheStats mockCacheStats;
 
     @BeforeEach
@@ -81,13 +79,6 @@ class ActivityControllerTest {
         testActivity.setRating(BigDecimal.valueOf(4.5));
         testActivity.setPhotoUrl("https://example.com/photo.jpg");
 
-        mockPageResponse = new ActivityPageResponse();
-        mockPageResponse.setActivities(Arrays.asList(testActivity));
-        mockPageResponse.setHasMore(false);
-        mockPageResponse.setCurrentPage(1);
-        mockPageResponse.setTotalCount(1);
-        mockPageResponse.setSource("cached");
-
         mockCacheStats = new ActivityService.CacheStats(
                 1L, 1L, 0L, LocalDateTime.now(), false, 7
         );
@@ -98,9 +89,11 @@ class ActivityControllerTest {
     class GetActivitiesByDestination {
 
         @Test
-        @DisplayName("Should return activities with default pagination")
-        void shouldReturnActivitiesWithDefaultPagination() throws Exception {
-            when(activityService.getActivitiesByDestination(1L, 1, 20)).thenReturn(mockPageResponse);
+        @DisplayName("Should return all activities for destination")
+        void shouldReturnAllActivitiesForDestination() throws Exception {
+            List<Activity> allActivities = Arrays.asList(testActivity);
+            when(activityService.getAllActivitiesByDestination(1L)).thenReturn(allActivities);
+            when(activityService.getCacheStats(1L)).thenReturn(mockCacheStats);
 
             mockMvc.perform(get("/api/activities/destination/1"))
                     .andExpect(status().isOk())
@@ -108,54 +101,20 @@ class ActivityControllerTest {
                     .andExpect(jsonPath("$.activities").isArray())
                     .andExpect(jsonPath("$.activities[0].name").value("Eiffel Tower"))
                     .andExpect(jsonPath("$.activities[0].category").value("tourist_attraction"))
-                    .andExpect(jsonPath("$.totalCount").value(1))
-                    .andExpect(jsonPath("$.hasMore").value(false))
-                    .andExpect(jsonPath("$.currentPage").value(1))
-                    .andExpect(jsonPath("$.source").value("cached"));
+                    .andExpect(jsonPath("$.count").value(1))
+                    .andExpect(jsonPath("$.source").value("database_cached"));
 
-            verify(activityService).getActivitiesByDestination(1L, 1, 20);
-        }
-
-        @Test
-        @DisplayName("Should return activities with custom pagination")
-        void shouldReturnActivitiesWithCustomPagination() throws Exception {
-            when(activityService.getActivitiesByDestination(1L, 2, 10)).thenReturn(mockPageResponse);
-
-            mockMvc.perform(get("/api/activities/destination/1")
-                            .param("page", "2")
-                            .param("size", "10"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.activities").isArray());
-
-            verify(activityService).getActivitiesByDestination(1L, 2, 10);
+            verify(activityService).getAllActivitiesByDestination(1L);
         }
 
         @Test
         @DisplayName("Should handle service exceptions gracefully")
         void shouldHandleServiceExceptionsGracefully() throws Exception {
-            when(activityService.getActivitiesByDestination(1L, 1, 20))
+            when(activityService.getAllActivitiesByDestination(1L))
                     .thenThrow(new RuntimeException("Database error"));
 
             mockMvc.perform(get("/api/activities/destination/1"))
                     .andExpect(status().isInternalServerError());
-        }
-    }
-
-    @Nested
-    @DisplayName("Get Activities by Destination and Category")
-    class GetActivitiesByDestinationAndCategory {
-
-        @Test
-        @DisplayName("Should return activities filtered by category")
-        void shouldReturnActivitiesFilteredByCategory() throws Exception {
-            when(activityService.getActivitiesByDestinationAndCategory(1L, "tourist_attraction", 1, 20))
-                    .thenReturn(mockPageResponse);
-
-            mockMvc.perform(get("/api/activities/destination/1/category/tourist_attraction"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.activities[0].category").value("tourist_attraction"));
-
-            verify(activityService).getActivitiesByDestinationAndCategory(1L, "tourist_attraction", 1, 20);
         }
     }
 
@@ -197,7 +156,6 @@ class ActivityControllerTest {
             enhancedActivity.setPhotoUrl("https://example.com/photo.jpg");
             enhancedActivity.setRating(BigDecimal.valueOf(4.2));
 
-            // Mock the controller's behavior - it checks if activity needs enhancement
             when(activityService.getActivityById(1L)).thenReturn(Optional.of(incompleteActivity));
             when(googlePlacesService.getPlaceDetails("test_place_id")).thenReturn(enhancedActivity);
             when(activityService.enhanceActivityWithPlacesData(incompleteActivity, enhancedActivity))
@@ -214,57 +172,21 @@ class ActivityControllerTest {
     }
 
     @Nested
-    @DisplayName("Search Activities")
-    class SearchActivities {
-
-        @Test
-        @DisplayName("Should return matching activities for search query")
-        void shouldReturnMatchingActivitiesForSearchQuery() throws Exception {
-            mockPageResponse.setQuery("tower");
-            when(activityService.searchActivities(1L, "tower", 1, 20)).thenReturn(mockPageResponse);
-
-            mockMvc.perform(get("/api/activities/destination/1/search")
-                            .param("query", "tower"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.activities").isArray())
-                    .andExpect(jsonPath("$.activities[0].name").value("Eiffel Tower"))
-                    .andExpect(jsonPath("$.query").value("tower"));
-
-            verify(activityService).searchActivities(1L, "tower", 1, 20);
-        }
-
-        @Test
-        @DisplayName("Should handle empty search results")
-        void shouldHandleEmptySearchResults() throws Exception {
-            ActivityPageResponse emptyResponse = new ActivityPageResponse();
-            emptyResponse.setActivities(Arrays.asList());
-            emptyResponse.setSource("cached");
-            emptyResponse.setQuery("nonexistent");
-
-            when(activityService.searchActivities(1L, "nonexistent", 1, 20)).thenReturn(emptyResponse);
-
-            mockMvc.perform(get("/api/activities/destination/1/search")
-                            .param("query", "nonexistent"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.activities").isEmpty());
-        }
-    }
-
-    @Nested
     @DisplayName("Google Places Integration")
     class GooglePlacesIntegration {
 
         @Test
-        @DisplayName("Should search activities from Google Places with default parameters")
-        void shouldSearchActivitiesFromGooglePlacesWithDefaultParameters() throws Exception {
-            when(activityService.getActivitiesByDestination(1L, 1, 20)).thenReturn(mockPageResponse);
+        @DisplayName("Should return cached activities when not forcing refresh")
+        void shouldReturnCachedActivitiesWhenNotForcingRefresh() throws Exception {
+            List<Activity> cachedActivities = Arrays.asList(testActivity);
+            when(activityService.getAllActivitiesByDestination(1L)).thenReturn(cachedActivities);
 
             mockMvc.perform(get("/api/activities/destination/1/places-search"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.activities").isArray())
                     .andExpect(jsonPath("$.source").value("cached"));
 
-            verify(activityService).getActivitiesByDestination(1L, 1, 20);
+            verify(activityService).getAllActivitiesByDestination(1L);
         }
 
         @Test
@@ -459,7 +381,8 @@ class ActivityControllerTest {
         @Test
         @DisplayName("Should return smart cached activities with statistics")
         void shouldReturnSmartCachedActivitiesWithStatistics() throws Exception {
-            when(activityService.getActivitiesByDestination(1L, 1, 20)).thenReturn(mockPageResponse);
+            List<Activity> allActivities = Arrays.asList(testActivity);
+            when(activityService.getAllActivitiesByDestination(1L)).thenReturn(allActivities);
             when(activityService.getCacheStats(1L)).thenReturn(mockCacheStats);
 
             mockMvc.perform(get("/api/activities/destination/1/smart"))

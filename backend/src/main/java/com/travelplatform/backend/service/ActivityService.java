@@ -1,6 +1,5 @@
 package com.travelplatform.backend.service;
 
-import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.entity.Destination;
 import com.travelplatform.backend.exception.ActivityNotFoundException;
@@ -13,9 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,7 +23,7 @@ public class ActivityService {
     private static final Logger logger = LoggerFactory.getLogger(GooglePlacesService.class);
 
     // Cache configuration constant
-    private static final int CACHE_TTL_DAYS = 7;
+    private static final int CACHE_TTL_DAYS = 30;
 
     @Autowired
     private ActivityRepository activityRepository;
@@ -42,11 +38,22 @@ public class ActivityService {
     private CostMultiplierService costMultiplierService;
 
     /**
-     * Get activities by destination with intelligent caching
-     * Checks cache freshness and refreshes from Google Places if stale
+     * Get ALL activities for a destination with smart caching
+     * Returns complete dataset for frontend pagination
      */
-    public ActivityPageResponse getActivitiesByDestination(Long destinationId, int page, int size) {
-        return getActivitiesWithPagination(destinationId, "all", null, page, size);
+    public List<Activity> getAllActivitiesByDestination(Long destinationId) {
+        logger.info("Fetching all activities for destination: {}", destinationId);
+
+        // Smart refresh logic - check if stale and refresh if needed
+        if (shouldRefreshFromGooglePlaces(destinationId)) {
+            logger.info("Cache is stale, refreshing from Google Places for destination: {}", destinationId);
+            refreshActivitiesFromGooglePlaces(destinationId);
+        }
+
+        // Return ALL activities from database
+        List<Activity> allActivities = activityRepository.findByDestinationId(destinationId);
+        logger.info("Returning {} total activities for destination: {}", allActivities.size(), destinationId);
+        return allActivities;
     }
 
     /**
@@ -168,42 +175,6 @@ public class ActivityService {
         );
     }
 
-    public ActivityPageResponse getActivitiesByDestinationAndCategory(Long destinationId, String category, int page, int size) {
-        return getActivitiesWithPagination(destinationId, category, null, page, size);
-    }
-
-    //TODO: To be revisited/implemented in a future update
-//    @CacheEvict(value = {"destinationActivities", "categoryActivities", "activityById"}, allEntries = true)
-//    public Activity createCustomActivity(Long destinationId, String name, String category,
-//                                         Integer durationMinutes, Double costEstimate, String description) {
-//        Optional<Destination> destinationOpt = destinationRepository.findById(destinationId);
-//        if (destinationOpt.isEmpty()) {
-//            throw new DestinationNotFoundException(destinationId);
-//        }
-//
-//        Destination destination = destinationOpt.get();
-//        Activity activity = Activity.createCustomActivity(name, category, destination);
-//
-//        if (durationMinutes != null) {
-//            activity.setDurationMinutes(durationMinutes);
-//        } else {
-//            activity.setDurationMinutes(ActivityDurationUtils.getDefaultDuration(category));
-//        }
-//
-//        if (costEstimate != null) {
-//            activity.setEstimatedCost(costEstimate);
-//        } else {
-//            activity.setEstimatedCost(ActivityDurationUtils.getDefaultCostEstimate(category));
-//        }
-//
-//        if (description != null) {
-//            activity.setDescription(description);
-//        }
-//
-//        return activityRepository.save(activity);
-//    }
-//
-
     @Cacheable(value = "activityById", key = "#id")
     public Optional<Activity> getActivityById(Long id) {
         return Optional.ofNullable(activityRepository.findById(id)
@@ -231,11 +202,6 @@ public class ActivityService {
             throw new ActivityNotFoundException(id);
         }
         activityRepository.deleteById(id);
-    }
-
-    // New overloaded version with pagination
-    public ActivityPageResponse searchActivities(Long destinationId, String searchTerm, int page, int size) {
-        return getActivitiesWithPagination(destinationId, "all", searchTerm, page, size);
     }
 
     @Cacheable(value = "topRatedActivities", key = "#destinationId")
@@ -390,77 +356,12 @@ public class ActivityService {
         }
 
         public long getTotalActivities() { return totalActivities; }
-        //TODO: Could reuse later, custom activities to be implemented in a future update
-//        public long getCustomActivities() { return customActivities; }
         public LocalDateTime getLastRefresh() { return lastRefresh; }
         public boolean isCacheStale() { return isCacheStale; }
         public int getCacheTtlDays() { return cacheTtlDays; }
     }
 
-    private ActivityPageResponse getActivitiesWithPagination(Long destinationId, String category, String searchTerm, int page, int size) {
-        if (size > 50) size = 50;
-        Pageable pageable = PageRequest.of(page - 1, size);
-
-        Page<Activity> activityPage;
-        String source = "cached";
-
-        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            activityPage = activityRepository.searchByDestinationAndTermPaginated(destinationId, searchTerm.trim(), pageable);
-        } else if (category != null && !category.equals("all")) {
-            activityPage = activityRepository.findByDestinationIdAndCategoryOrderByPopularity(destinationId, category, pageable);
-        } else {
-            activityPage = activityRepository.findByDestinationIdOrderByPopularity(destinationId, pageable);
-        }
-
-        boolean needsApiCall = shouldFetchMoreFromApi(destinationId, activityPage, category, searchTerm);
-        if (needsApiCall) {
-            List<Activity> newActivities = fetchFromGooglePlaces(destinationId, category, searchTerm);
-            if (!newActivities.isEmpty()) {
-                saveActivitiesFromPlaces(newActivities, destinationId);
-                source = "google_places_expanded";
-
-                // Re-run the same query to get updated results
-                if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-                    activityPage = activityRepository.searchByDestinationAndTermPaginated(destinationId, searchTerm.trim(), pageable);
-                } else if (category != null && !category.equals("all")) {
-                    activityPage = activityRepository.findByDestinationIdAndCategoryOrderByPopularity(destinationId, category, pageable);
-                } else {
-                    activityPage = activityRepository.findByDestinationIdOrderByPopularity(destinationId, pageable);
-                }
-            }
-        }
-
-        ActivityPageResponse response = ActivityPageResponse.fromPage(activityPage, source);
-        response.setQuery(searchTerm);
-        response.setCategory(category);
-        return response;
-    }
-
-    private boolean shouldFetchMoreFromApi(Long destinationId, Page<Activity> currentPage,
-                                           String category, String searchTerm) {
-        // Don't fetch if we're not on the last page of current results
-        if (currentPage.hasNext()) {
-            return false;
-        }
-
-        // Don't fetch if we already have a decent amount of data
-        if (currentPage.getTotalElements() >= 100) {
-            return false;
-        }
-
-        // For search queries, fetch if we have very few results
-        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            return currentPage.getTotalElements() < 10;
-        }
-
-        // For categories, fetch if we have fewer than 30 activities
-        if (category != null && !category.equals("all")) {
-            return currentPage.getTotalElements() < 30;
-        }
-
-        // For general browsing, fetch if we have fewer than 50 activities
-        return currentPage.getTotalElements() < 50;
-    }
+    // Helper method for fetching from Google Places (used by other endpoints)
     private List<Activity> fetchFromGooglePlaces(Long destinationId, String category, String searchTerm) {
         Destination destination = destinationRepository.findById(destinationId)
                 .orElseThrow(() -> new DestinationNotFoundException(destinationId));
@@ -546,6 +447,4 @@ public class ActivityService {
         logger.info("Found {} total unique activities for {}", allActivities.size(), cityName);
         return allActivities;
     }
-
-
 }

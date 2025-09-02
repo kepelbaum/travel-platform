@@ -1,6 +1,5 @@
 package com.travelplatform.backend.controller;
 
-import com.travelplatform.backend.dto.ActivityPageResponse;
 import com.travelplatform.backend.entity.Activity;
 import com.travelplatform.backend.exception.ActivityMissingPlaceIdException;
 import com.travelplatform.backend.exception.GooglePlacesApiException;
@@ -30,40 +29,36 @@ public class ActivityController {
     @Autowired
     private GooglePlacesService googlePlacesService;
 
+    // Main endpoint - returns ALL activities for frontend pagination
     @GetMapping("/destination/{destinationId}")
-    public ResponseEntity<Map<String, Object>> getActivitiesByDestination(
-            @PathVariable Long destinationId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<Map<String, Object>> getActivitiesByDestination(@PathVariable Long destinationId) {
+        List<Activity> allActivities = activityService.getAllActivitiesByDestination(destinationId);
+        ActivityService.CacheStats stats = activityService.getCacheStats(destinationId);
 
-            ActivityPageResponse response = activityService.getActivitiesByDestination(destinationId, page, size);
-            return ResponseEntity.ok(Map.of(
-                    "activities", response.getActivities(),
-                    "count", response.getActivities().size(),
-                    "totalCount", response.getTotalCount(),
-                    "hasMore", response.isHasMore(),
-                    "currentPage", response.getCurrentPage(),
-                    "source", response.getSource()
-            ));
+        return ResponseEntity.ok(Map.of(
+                "activities", allActivities,
+                "count", allActivities.size(),
+                "source", stats.isCacheStale() ? "google_places_auto_refreshed" : "database_cached"
+        ));
     }
 
-    @GetMapping("/destination/{destinationId}/category/{category}")
-    public ResponseEntity<Map<String, Object>> getActivitiesByDestinationAndCategory(
-            @PathVariable Long destinationId,
-            @PathVariable String category,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+    // Smart endpoint with cache stats
+    @GetMapping("/destination/{destinationId}/smart")
+    public ResponseEntity<Map<String, Object>> getActivitiesWithSmartCaching(@PathVariable Long destinationId) {
+        List<Activity> allActivities = activityService.getAllActivitiesByDestination(destinationId);
+        ActivityService.CacheStats stats = activityService.getCacheStats(destinationId);
 
-
-            ActivityPageResponse response = activityService.getActivitiesByDestinationAndCategory(destinationId, category, page, size);
-            return ResponseEntity.ok(Map.of(
-                    "activities", response.getActivities(),
-                    "count", response.getActivities().size(),
-                    "totalCount", response.getTotalCount(),
-                    "hasMore", response.isHasMore(),
-                    "currentPage", response.getCurrentPage(),
-                    "source", response.getSource()
-            ));
+        return ResponseEntity.ok(Map.of(
+                "activities", allActivities,
+                "count", allActivities.size(),
+                "source", stats.isCacheStale() ? "google_places_auto_refreshed" : "database_cached",
+                "cacheStats", Map.of(
+                        "totalActivities", stats.getTotalActivities(),
+                        "lastRefresh", stats.getLastRefresh(),
+                        "isCacheStale", stats.isCacheStale(),
+                        "cacheTtlDays", stats.getCacheTtlDays()
+                )
+        ));
     }
 
     @GetMapping("/{id}")
@@ -91,25 +86,6 @@ public class ActivityController {
         return ResponseEntity.ok(activity);
     }
 
-    @GetMapping("/destination/{destinationId}/search")
-    public ResponseEntity<Map<String, Object>> searchActivities(
-            @PathVariable Long destinationId,
-            @RequestParam String query,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-            ActivityPageResponse response = activityService.searchActivities(destinationId, query, page, size);
-            return ResponseEntity.ok(Map.of(
-                    "activities", response.getActivities(),
-                    "count", response.getActivities().size(),
-                    "totalCount", response.getTotalCount(),
-                    "hasMore", response.isHasMore(),
-                    "currentPage", response.getCurrentPage(),
-                    "query", query,
-                    "source", response.getSource()
-            ));
-    }
-
     @GetMapping("/destination/{destinationId}/top-rated")
     public ResponseEntity<List<Activity>> getTopRatedActivities(@PathVariable Long destinationId) {
         List<Activity> activities = activityService.getTopRatedActivities(destinationId);
@@ -124,21 +100,6 @@ public class ActivityController {
         List<Activity> activities = activityService.getActivitiesByCostRange(destinationId, minCost, maxCost);
         return ResponseEntity.ok(activities);
     }
-
-    //TODO: To be implemented in a future update
-//    @PostMapping("/destination/{destinationId}/custom")
-//    public ResponseEntity<Activity> createCustomActivity(
-//            @PathVariable Long destinationId,
-//            @RequestParam String name,
-//            @RequestParam String category,
-//            @RequestParam(required = false) Integer durationMinutes,
-//            @RequestParam(required = false) Double estimatedCost,
-//            @RequestParam(required = false) String description) {
-//
-//        Activity activity = activityService.createCustomActivity(
-//                destinationId, name, category, durationMinutes, estimatedCost, description);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(activity);
-//    }
 
     @PutMapping("/{id}")
     public ResponseEntity<Activity> updateActivity(
@@ -173,16 +134,15 @@ public class ActivityController {
 
         logger.info("Searching Google Places for activities in destination: {} with type: {}", destinationId, type);
 
-
         // Check if we already have cached activities and don't need to refresh
         if (!forceRefresh) {
-            ActivityPageResponse response = activityService.getActivitiesByDestination(destinationId, 1, 20);
-            if (!response.getActivities().isEmpty()) {
-                logger.info("Returning {} cached activities for destination: {}", response.getActivities().size(), destinationId);
+            List<Activity> cachedActivities = activityService.getAllActivitiesByDestination(destinationId);
+            if (!cachedActivities.isEmpty()) {
+                logger.info("Returning {} cached activities for destination: {}", cachedActivities.size(), destinationId);
                 return ResponseEntity.ok(Map.of(
-                        "activities", response.getActivities(),
+                        "activities", cachedActivities,
                         "source", "cached",
-                        "count", response.getActivities().size()
+                        "count", cachedActivities.size()
                 ));
             }
         }
@@ -254,24 +214,6 @@ public class ActivityController {
         return ResponseEntity.ok(stats);
     }
 
-    @GetMapping("/destination/{destinationId}/smart")
-    public ResponseEntity<Map<String, Object>> getActivitiesWithSmartCaching(@PathVariable Long destinationId) {
-        ActivityPageResponse response = activityService.getActivitiesByDestination(destinationId, 1, 20);
-        ActivityService.CacheStats stats = activityService.getCacheStats(destinationId);
-
-        return ResponseEntity.ok(Map.of(
-                "activities", response.getActivities(),
-                "count", response.getActivities().size(),
-                "source", stats.isCacheStale() ? "google_places_auto_refreshed" : "database_cached",
-                "cacheStats", Map.of(
-                        "totalActivities", stats.getTotalActivities(),
-                        "lastRefresh", stats.getLastRefresh(),
-                        "isCacheStale", stats.isCacheStale(),
-                        "cacheTtlDays", stats.getCacheTtlDays()
-                )
-        ));
-    }
-
     private boolean shouldEnhanceActivity(Activity activity) {
         return activity.getPhotoUrl() == null ||
                 activity.getRating() == null ||
@@ -294,6 +236,7 @@ public class ActivityController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @GetMapping("/placeDetails/{placeId}")
     public ResponseEntity<Activity> getPlaceDetailsEndpoint(@PathVariable String placeId) {
         Activity activity = googlePlacesService.getPlaceDetails(placeId);

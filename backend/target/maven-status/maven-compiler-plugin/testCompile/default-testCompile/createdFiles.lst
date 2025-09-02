@@ -27,12 +27,10 @@ com/travelplatform/backend/controller/ActivityControllerTest$GooglePlacesIntegra
 com/travelplatform/backend/service/GooglePlacesServiceTest$PlaceDetails.class
 com/travelplatform/backend/service/GooglePlacesServiceTest$SearchActivitiesForDestination.class
 com/travelplatform/backend/service/ActivityServiceTest$SmartCaching.class
-com/travelplatform/backend/controller/ActivityControllerTest$SearchActivities.class
 com/travelplatform/backend/service/ActivityServiceTest$ActivityDeletion.class
 com/travelplatform/backend/service/GooglePlacesServiceTest.class
 com/travelplatform/backend/controller/ActivityControllerTest$GetActivitiesByDestination.class
 com/travelplatform/backend/service/ActivityServiceTest$ActivityRetrieval.class
-com/travelplatform/backend/controller/ActivityControllerTest$GetActivitiesByDestinationAndCategory.class
 com/travelplatform/backend/repository/TripActivityRepositoryTest.class
 com/travelplatform/backend/service/ActivityServiceTest$SearchAndFilter.class
 com/travelplatform/backend/controller/ActivityControllerTest$ActivityManagement.class

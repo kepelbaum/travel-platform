@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.travelplatform.backend.service.ActivityServiceTest$SearchAndFilter
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.439 s -- in com.travelplatform.backend.service.ActivityServiceTest$SearchAndFilter
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.travelplatform.backend.service.ActivityServiceTest$SearchAndFilter
