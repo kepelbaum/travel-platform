@@ -108,22 +108,6 @@ export default function BackgroundEffects() {
               }}
             />
           ))}
-
-          {/* Light sparkle effects */}
-          {Array.from({ length: 10 }, (_, i) => (
-            <div
-              key={`sparkle-${i}`}
-              className="absolute w-1 h-1 bg-yellow-300 rounded-full opacity-40"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationName: 'sparkle',
-                animationDuration: '4s',
-                animationIterationCount: 'infinite',
-                animationDelay: `${Math.random() * 4}s`,
-              }}
-            />
-          ))}
         </div>
       )}
 

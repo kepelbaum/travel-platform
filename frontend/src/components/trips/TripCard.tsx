@@ -4,6 +4,7 @@ import { Trip } from '@/types';
 import { useTripPlanningStore } from '@/store/tripPlanning';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useThemeStore } from '@/store/theme';
 
 interface TripCardProps {
   trip: Trip;
@@ -11,6 +12,7 @@ interface TripCardProps {
 
 export function TripCard({ trip }: TripCardProps) {
   const { setActiveTrip } = useTripPlanningStore();
+  const { isDark } = useThemeStore();
   const router = useRouter();
 
   const handleStartPlanning = () => {
@@ -32,9 +34,8 @@ export function TripCard({ trip }: TripCardProps) {
 
   const getDaysUntilTrip = () => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to start of day
+    today.setHours(0, 0, 0, 0);
 
-    // Parse trip start date directly
     const [year, month, day] = trip.startDate.split('-').map(Number);
     const startDate = new Date(year, month - 1, day);
 
@@ -44,12 +45,14 @@ export function TripCard({ trip }: TripCardProps) {
 
     if (daysUntil > 0) {
       return {
-        text: `${daysUntil} days away`,
+        text: `${daysUntil}d away`,
+        textLong: `${daysUntil} days away`,
         color: 'bg-blue-100 text-blue-800',
       };
     } else if (daysUntil === 0) {
       return {
-        text: 'Starts today!',
+        text: 'Today!',
+        textLong: 'Starts today!',
         color: 'bg-green-100 text-green-800',
       };
     } else {
@@ -59,89 +62,103 @@ export function TripCard({ trip }: TripCardProps) {
       );
       if (daysFromEnd >= 0) {
         return {
-          text: 'In progress',
+          text: 'Active',
+          textLong: 'In progress',
           color: 'bg-green-100 text-green-800',
         };
       } else {
         return {
-          text: 'Completed',
+          text: 'Done',
+          textLong: 'Completed',
           color: 'bg-purple-100 text-purple-800',
         };
       }
     }
   };
-
   const tripStatus = getDaysUntilTrip();
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow h-[280px] flex flex-col">
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="text-lg font-medium text-gray-900 truncate">
-          {trip.name}
-        </h3>
+    <div
+      className={`rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-[280px] flex flex-col ${
+        isDark
+          ? 'bg-white border-gray-200 shadow-lg shadow-purple-500/25'
+          : 'bg-white border-gray-300 shadow-lg shadow-gray-400/20'
+      }`}
+    >
+      {/* Header section */}
+      <div
+        className={`px-6 py-4 flex justify-between items-center ${
+          isDark ? 'bg-slate-800' : 'bg-slate-700'
+        }`}
+      >
+        <h3 className="text-lg font-bold text-white truncate">{trip.name}</h3>
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tripStatus.color}`}
         >
-          {tripStatus.text}
+          <span className="hidden sm:inline">{tripStatus.textLong}</span>
+          <span className="sm:hidden">{tripStatus.text}</span>
         </span>
       </div>
 
-      <div className="space-y-2 mb-4 flex-1">
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Dates:</span>{' '}
-          {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
-        </p>
-        {trip.budget && (
+      {/* Content section */}
+      <div className="p-6 flex flex-col flex-1">
+        <div className="space-y-2 mb-4 flex-1">
           <p className="text-sm text-gray-600">
-            <span className="font-medium">Budget:</span> $
-            {trip.budget.toLocaleString()}
+            <span className="font-semibold text-blue-600">Dates:</span>{' '}
+            {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
           </p>
-        )}
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Destinations:</span>{' '}
-          {trip.destinations && trip.destinations.length > 0
-            ? (() => {
-                const destinationNames = trip.destinations.map((d) => d.name);
-                let displayText = '';
-                let count = 0;
+          {trip.budget && (
+            <p className="text-sm text-gray-600">
+              <span className="font-semibold text-emerald-600">Budget:</span> $
+              {trip.budget.toLocaleString()}
+            </p>
+          )}
+          <p className="text-sm text-gray-600">
+            <span className="font-semibold text-violet-600">Destinations:</span>{' '}
+            {trip.destinations && trip.destinations.length > 0
+              ? (() => {
+                  const destinationNames = trip.destinations.map((d) => d.name);
+                  let displayText = '';
+                  let count = 0;
 
-                for (const name of destinationNames) {
-                  const newText =
-                    count === 0 ? name : `${displayText}, ${name}`;
-                  if (newText.length > 50) {
-                    const remaining = destinationNames.length - count;
-                    return `${displayText} and ${remaining} more`;
+                  for (const name of destinationNames) {
+                    const newText =
+                      count === 0 ? name : `${displayText}, ${name}`;
+                    if (newText.length > 50) {
+                      const remaining = destinationNames.length - count;
+                      return `${displayText} and ${remaining} more`;
+                    }
+                    displayText = newText;
+                    count++;
                   }
-                  displayText = newText;
-                  count++;
-                }
 
-                return displayText;
-              })()
-            : '0'}
-        </p>
-      </div>
+                  return displayText;
+                })()
+              : 'None'}
+          </p>
+        </div>
 
-      <div className="flex space-x-2 mt-auto">
-        <Link
-          href={`/dashboard/trips/${trip.id}`}
-          className="flex-1 text-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          View
-        </Link>
+        <div className="flex space-x-2 mt-auto">
+          <Link
+            href={`/dashboard/trips/${trip.id}`}
+            className="flex-1 text-center px-3 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-gray-100 bg-slate-600 hover:bg-slate-700 transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            View
+          </Link>
 
-        <Link
-          href={`/dashboard/trips/${trip.id}/edit`}
-          className="flex-1 text-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-        >
-          Edit
-        </Link>
-        <button
-          onClick={handleStartPlanning}
-          className="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 transition-colors cursor-pointer"
-        >
-          Plan
-        </button>
+          <Link
+            href={`/dashboard/trips/${trip.id}/edit`}
+            className="flex-1 text-center px-3 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            Edit
+          </Link>
+          <button
+            onClick={handleStartPlanning}
+            className="flex-1 px-3 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-green-700 hover:bg-green-800 transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg"
+          >
+            Plan
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -6,9 +6,11 @@ import { tripsApi } from '@/lib/api';
 import { Trip } from '@/types';
 import { TripCard } from './TripCard';
 import Link from 'next/link';
+import { useThemeStore } from '@/store/theme';
 
 export default function TripList() {
   const { user } = useAuthStore();
+  const { isDark } = useThemeStore();
 
   const {
     data: trips = [],
@@ -21,6 +23,11 @@ export default function TripList() {
     },
     enabled: !!user?.id,
   });
+
+  // Sort trips by start date (earliest to latest)
+  const sortedTrips = trips.sort(
+    (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
 
   if (isLoading) {
     return (
@@ -41,8 +48,12 @@ export default function TripList() {
   if (trips.length === 0) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No trips yet</h3>
-        <p className="text-gray-500 mb-4">
+        <h3
+          className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+        >
+          No trips yet
+        </h3>
+        <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
           Start planning your next adventure!
         </p>
         <Link
@@ -58,7 +69,11 @@ export default function TripList() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Your Trips</h2>
+        <h2
+          className={`text-xl font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+        >
+          Your Trips
+        </h2>
         <Link
           href="/dashboard/trips/new"
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
@@ -68,7 +83,7 @@ export default function TripList() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {trips.map((trip: Trip) => (
+        {sortedTrips.map((trip: Trip) => (
           <TripCard key={trip.id} trip={trip} />
         ))}
       </div>

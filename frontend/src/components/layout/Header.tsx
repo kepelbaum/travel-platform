@@ -24,7 +24,7 @@ export default function Header() {
         className={`sticky top-0 z-40 backdrop-blur-md transition-all duration-500 border-b ${
           isDark
             ? 'bg-gray-900/90 border-gray-700'
-            : 'bg-white/90 border-gray-200'
+            : 'bg-white/90 border-gray-300'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -222,7 +222,7 @@ export default function Header() {
               className={`md:hidden border-t pt-4 pb-3 ${
                 isDark
                   ? 'border-gray-700 bg-gray-900/95'
-                  : 'border-gray-200 bg-white/95'
+                  : 'border-gray-300 bg-white/95'
               } backdrop-blur-md`}
             >
               {/* Navigation Links - centered and full-width touchable */}

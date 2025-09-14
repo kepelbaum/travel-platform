@@ -6,11 +6,13 @@ import { useTripPlanningStore } from '@/store/tripPlanning';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi } from '@/lib/api';
 import Link from 'next/link';
+import { useThemeStore } from '@/store/theme';
 
 export function DestinationCard({ destination }: { destination: Destination }) {
   const { user } = useAuthStore();
   const { activeTrip } = useTripPlanningStore();
   const queryClient = useQueryClient();
+  const { isDark } = useThemeStore();
 
   const isInTrip =
     activeTrip?.destinations?.some((dest) => dest.id === destination.id) ||
@@ -61,7 +63,13 @@ export function DestinationCard({ destination }: { destination: Destination }) {
   const isLoading = addMutation.isPending || removeMutation.isPending;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow h-[420px] flex flex-col">
+    <div
+      className={`rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-[420px] flex flex-col ${
+        isDark
+          ? 'bg-white border-gray-200 shadow-lg shadow-purple-500/25'
+          : 'bg-white border-gray-300 shadow-lg shadow-gray-400/20'
+      }`}
+    >
       <div className="h-48 relative flex-shrink-0">
         {destination.imageUrl ? (
           <div className="relative w-full h-full">
@@ -134,7 +142,7 @@ export function DestinationCard({ destination }: { destination: Destination }) {
               href="/dashboard"
               className="block w-full px-4 py-2 text-center text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:border-gray-400 transition-colors cursor-pointer"
             >
-              Select a trip to add destinations
+              Select a trip to add to
             </Link>
           )}
         </div>
