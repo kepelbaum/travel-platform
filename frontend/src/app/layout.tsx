@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google';
 import { ReactQueryProvider } from '@/lib/react-query';
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { NavigationHandler } from '@/components/layout/NavigationHandler';
+import ThemedLayout from '@/components/layout/ThemedLayout';
+import Header from '@/components/layout/Header';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic', 'latin-ext'] });
 
@@ -11,7 +13,6 @@ export const metadata: Metadata = {
   title: 'VoidWander',
   description:
     'Explore the unknown with VoidWander- intelligent travel planning for your next adventure',
-  // Optional extras:
   keywords:
     'travel planning, trip planner, destinations, travel recommendations',
   authors: [{ name: 'Kirill Epelbaum' }],
@@ -28,8 +29,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ReactQueryProvider>
           <AuthInitializer>
-            <NavigationHandler />
-            {children}
+            <ThemedLayout showCat={true} showBackground={true}>
+              <Header />
+              <NavigationHandler />
+              {children}
+            </ThemedLayout>
           </AuthInitializer>
         </ReactQueryProvider>
       </body>
