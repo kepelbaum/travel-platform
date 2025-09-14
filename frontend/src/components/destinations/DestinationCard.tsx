@@ -66,7 +66,7 @@ export function DestinationCard({ destination }: { destination: Destination }) {
     <div
       className={`rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-[420px] flex flex-col ${
         isDark
-          ? 'bg-white border-gray-200 shadow-lg shadow-purple-500/25'
+          ? 'bg-gray-800 border-gray-700 shadow-lg shadow-purple-500/25'
           : 'bg-white border-gray-300 shadow-lg shadow-gray-400/20'
       }`}
     >
@@ -99,7 +99,11 @@ export function DestinationCard({ destination }: { destination: Destination }) {
       </div>
 
       <div className="p-6 flex flex-col flex-1">
-        <p className="text-gray-600 text-sm leading-relaxed mb-4 flex-1 overflow-hidden">
+        <p
+          className={`text-sm leading-relaxed mb-4 flex-1 overflow-hidden ${
+            isDark ? 'text-gray-300' : 'text-gray-600'
+          }`}
+        >
           <span className="line-clamp-4">{destination.description}</span>
         </p>
 
@@ -109,7 +113,11 @@ export function DestinationCard({ destination }: { destination: Destination }) {
               href={`https://www.google.com/maps/@${destination.latitude},${destination.longitude},15z`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:text-blue-800 transition-colors inline-block mb-2"
+              className={`text-xs transition-colors inline-block mb-2 ${
+                isDark
+                  ? 'text-blue-400 hover:text-blue-300'
+                  : 'text-blue-600 hover:text-blue-800'
+              }`}
             >
               📍 View on Google Maps ({destination.latitude.toFixed(4)},{' '}
               {destination.longitude.toFixed(4)})
@@ -140,7 +148,11 @@ export function DestinationCard({ destination }: { destination: Destination }) {
           ) : (
             <Link
               href="/dashboard"
-              className="block w-full px-4 py-2 text-center text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:border-gray-400 transition-colors cursor-pointer"
+              className={`block w-full px-4 py-2 text-center text-sm border rounded-md transition-colors cursor-pointer ${
+                isDark
+                  ? 'text-gray-400 hover:text-gray-300 border-gray-600 hover:border-gray-500'
+                  : 'text-gray-500 hover:text-gray-700 border-gray-300 hover:border-gray-400'
+              }`}
             >
               Select a trip to add to
             </Link>

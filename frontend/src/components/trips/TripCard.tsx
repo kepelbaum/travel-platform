@@ -45,15 +45,19 @@ export function TripCard({ trip }: TripCardProps) {
 
     if (daysUntil > 0) {
       return {
-        text: `${daysUntil}d away`,
+        text: `${daysUntil} days`,
         textLong: `${daysUntil} days away`,
-        color: 'bg-blue-100 text-blue-800',
+        color: isDark
+          ? 'bg-blue-900/30 text-blue-300 border border-blue-700/50'
+          : 'bg-blue-100 text-blue-800',
       };
     } else if (daysUntil === 0) {
       return {
         text: 'Today!',
         textLong: 'Starts today!',
-        color: 'bg-green-100 text-green-800',
+        color: isDark
+          ? 'bg-green-900/30 text-green-300 border border-green-700/50'
+          : 'bg-green-100 text-green-800',
       };
     } else {
       const endDate = new Date(trip.endDate);
@@ -64,13 +68,17 @@ export function TripCard({ trip }: TripCardProps) {
         return {
           text: 'Active',
           textLong: 'In progress',
-          color: 'bg-green-100 text-green-800',
+          color: isDark
+            ? 'bg-green-900/30 text-green-300 border border-green-700/50'
+            : 'bg-green-100 text-green-800',
         };
       } else {
         return {
           text: 'Done',
           textLong: 'Completed',
-          color: 'bg-purple-100 text-purple-800',
+          color: isDark
+            ? 'bg-purple-900/30 text-purple-300 border border-purple-700/50'
+            : 'bg-purple-100 text-purple-800',
         };
       }
     }
@@ -81,17 +89,19 @@ export function TripCard({ trip }: TripCardProps) {
     <div
       className={`rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-[280px] flex flex-col ${
         isDark
-          ? 'bg-white border-gray-200 shadow-lg shadow-purple-500/25'
+          ? 'bg-gray-800 border-gray-700 shadow-lg shadow-purple-500/25'
           : 'bg-white border-gray-300 shadow-lg shadow-gray-400/20'
       }`}
     >
-      {/* Header section */}
-      <div
-        className={`px-6 py-4 flex justify-between items-center ${
-          isDark ? 'bg-slate-800' : 'bg-slate-700'
-        }`}
-      >
-        <h3 className="text-lg font-bold text-white truncate">{trip.name}</h3>
+      {/* Header section - unified with card */}
+      <div className="px-6 py-4 flex justify-between items-center">
+        <h3
+          className={`text-lg font-bold truncate ${
+            isDark ? 'text-gray-100' : 'text-gray-900'
+          }`}
+        >
+          {trip.name}
+        </h3>
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tripStatus.color}`}
         >
@@ -101,20 +111,38 @@ export function TripCard({ trip }: TripCardProps) {
       </div>
 
       {/* Content section */}
-      <div className="p-6 flex flex-col flex-1">
+      <div className="p-6 pt-0 flex flex-col flex-1">
         <div className="space-y-2 mb-4 flex-1">
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold text-blue-600">Dates:</span>{' '}
+          <p
+            className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
+          >
+            <span
+              className={`font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+            >
+              Dates:
+            </span>{' '}
             {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
           </p>
           {trip.budget && (
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold text-emerald-600">Budget:</span> $
-              {trip.budget.toLocaleString()}
+            <p
+              className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
+            >
+              <span
+                className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}
+              >
+                Budget:
+              </span>{' '}
+              ${trip.budget.toLocaleString()}
             </p>
           )}
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold text-violet-600">Destinations:</span>{' '}
+          <p
+            className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
+          >
+            <span
+              className={`font-semibold ${isDark ? 'text-violet-400' : 'text-violet-600'}`}
+            >
+              Destinations:
+            </span>{' '}
             {trip.destinations && trip.destinations.length > 0
               ? (() => {
                   const destinationNames = trip.destinations.map((d) => d.name);
@@ -141,7 +169,11 @@ export function TripCard({ trip }: TripCardProps) {
         <div className="flex space-x-2 mt-auto">
           <Link
             href={`/dashboard/trips/${trip.id}`}
-            className="flex-1 text-center px-3 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-gray-100 bg-slate-600 hover:bg-slate-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            className={`flex-1 text-center px-3 py-2.5 border border-transparent rounded-lg text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg ${
+              isDark
+                ? 'text-gray-100 bg-gray-700 hover:bg-gray-600'
+                : 'text-gray-100 bg-slate-600 hover:bg-slate-700'
+            }`}
           >
             View
           </Link>

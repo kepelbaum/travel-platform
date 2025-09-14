@@ -3,14 +3,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { useThemeStore } from '@/store/theme';
 import { tripsApi } from '@/lib/api';
 import { Trip } from '@/types';
 import { useState, use } from 'react';
-import Header from '@/components/layout/Header';
 import Link from 'next/link';
 import { DestinationMiniCard } from '@/components/destinations/DestinationMiniCard';
 import { TripDetails } from '@/components/trips/TripDetails';
 import { DeleteTripModal } from '@/components/trips/DeleteTripModal';
+import { DeleteDestinationModal } from '@/components/trips/DeleteDestinationModal';
 import ActivityBrowser from '@/components/activities/ActivityBrowser';
 import TripTimeline from '@/components/trip-activities/TripTimeline';
 import { useTripPlanningStore } from '@/store/tripPlanning';
@@ -26,9 +27,16 @@ interface TripDetailsPageProps {
 export default function TripDetailsPage({ params }: TripDetailsPageProps) {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { isDark } = useThemeStore();
   const queryClient = useQueryClient();
   queryClient.invalidateQueries({ queryKey: ['activity-categories'] });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteDestinationConfirm, setShowDeleteDestinationConfirm] =
+    useState(false);
+  const [destinationToDelete, setDestinationToDelete] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<
     'overview' | 'timeline' | 'activities'
   >('overview');
@@ -69,7 +77,6 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
     onError: (error) => {},
   });
 
-  // Destination deletion mutation
   const deleteDestinationMutation = useMutation({
     mutationFn: (destinationId: number) => {
       return tripsApi.removeDestinationFromTrip(
@@ -79,9 +86,7 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
       );
     },
     onSuccess: async () => {
-      // Invalidate the current trip query to refresh the page
       await queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
-      // Also invalidate trips list in case this affects trip status
       await queryClient.invalidateQueries({ queryKey: ['trips', user?.id] });
     },
     onError: (error) => {
@@ -91,7 +96,7 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
 
   const formatDate = (dateString: string) => {
     const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(year, month - 1, day); // month is 0-indexed
+    const date = new Date(year, month - 1, day);
 
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -101,122 +106,121 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      case 'PLANNED':
-        return 'bg-blue-100 text-blue-800';
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
-      case 'COMPLETED':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const handleDelete = () => {
     deleteMutation.mutate();
     setShowDeleteConfirm(false);
   };
 
-  const handleRemoveDestination = (destinationId: number) => {
-    deleteDestinationMutation.mutate(destinationId);
+  const handleRemoveDestination = (
+    destinationId: number,
+    destinationName: string
+  ) => {
+    setDestinationToDelete({ id: destinationId, name: destinationName });
+    setShowDeleteDestinationConfirm(true);
   };
 
-  // Simple destination image logic - no activity images needed
+  const confirmRemoveDestination = () => {
+    if (destinationToDelete) {
+      deleteDestinationMutation.mutate(destinationToDelete.id);
+      setShowDeleteDestinationConfirm(false);
+      setDestinationToDelete(null);
+    }
+  };
+
   const getDestinationImage = (destination: any) => {
-    return destination.imageUrl || null; // Use gradient fallback if no image
+    return destination.imageUrl || null;
   };
 
-  // Auto-select destination if only one exists
   if (trip?.destinations?.length === 1 && !selectedDestinationId) {
     setSelectedDestinationId(trip.destinations[0].id);
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </main>
-      </div>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 sm:pb-24">
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </main>
     );
   }
 
   if (error?.message.includes('404')) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-6 text-gray-400">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.034 0-3.9.785-5.291 2.09m0 0L4 20h16l-2.709-2.91z"
-                />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Trip Not Found
-            </h1>
-            <p className="text-gray-600 mb-6">
-              The trip you're looking for doesn't exist or you don't have
-              permission to view it.
-            </p>
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 cursor-pointer"
-            >
-              Go Back
-            </button>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 sm:pb-24">
+        <div className="text-center py-12">
+          <div
+            className={`w-16 h-16 mx-auto mb-6 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.034 0-3.9.785-5.291 2.09m0 0L4 20h16l-2.709-2.91z"
+              />
+            </svg>
           </div>
-        </main>
-      </div>
+          <h1
+            className={`text-2xl font-bold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+          >
+            Trip Not Found
+          </h1>
+          <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            The trip you're looking for doesn't exist or you don't have
+            permission to view it.
+          </p>
+          <button
+            onClick={() => router.back()}
+            className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 cursor-pointer ${
+              isDark
+                ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600'
+                : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 hover:shadow-md'
+            }`}
+          >
+            Go Back
+          </button>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <>
       {trip && (
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-32 sm:pb-24">
           {/* Trip header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1
+                  className={`text-2xl sm:text-3xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+                >
                   {trip.name}
                 </h1>
-                <div className="flex items-center mt-2 space-x-4">
-                  {/* <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(trip.status)}`}
+                <div className="flex flex-col sm:flex-row sm:items-center mt-2 space-y-1 sm:space-y-0 sm:space-x-4">
+                  <span
+                    className={`text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
                   >
-                    {trip.status}
-                  </span> */}
-                  <span className="text-gray-500">
                     {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <Link
                   href={`/dashboard/trips/${trip.id}/edit`}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className={`inline-flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium transition-colors ${
+                    isDark
+                      ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600'
+                      : 'border-gray-400 text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  }`}
                 >
                   Edit Trip
                 </Link>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 cursor-pointer"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 cursor-pointer"
                 >
                   Delete Trip
                 </button>
@@ -225,38 +229,52 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
           </div>
 
           {/* Tab navigation */}
-          <div className="mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
+          <div className="mb-4 sm:mb-6">
+            <div
+              className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
+            >
+              <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-2 px-2 sm:px-1 whitespace-nowrap border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                     activeTab === 'overview'
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : isDark
+                        ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   📋 Overview
                 </button>
                 <button
                   onClick={() => setActiveTab('timeline')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-2 px-2 sm:px-1 whitespace-nowrap border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                     activeTab === 'timeline'
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : isDark
+                        ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   📅 Timeline
                 </button>
                 <button
-                  onClick={() => setActiveTab('activities')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  onClick={() => {
+                    // Fixed: Check if destinations exist before accessing
+                    if (trip.destinations && trip.destinations.length > 0) {
+                      setSelectedDestinationId(trip.destinations[0].id);
+                    }
+                    setActiveTab('activities');
+                  }}
+                  className={`py-2 px-2 sm:px-1 whitespace-nowrap border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                     activeTab === 'activities'
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : isDark
+                        ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  🎯 Browse Activities
+                  🎯 Activities
                 </button>
               </nav>
             </div>
@@ -268,10 +286,18 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
               <TripDetails trip={trip} />
 
               {/* Enhanced destinations section */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900">
+              <div
+                className={`rounded-lg shadow-lg ${
+                  isDark
+                    ? 'bg-gray-800 border border-gray-700 shadow-purple-500/25'
+                    : 'bg-white border border-gray-300 shadow-gray-400/20'
+                }`}
+              >
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 mb-4 sm:mb-6">
+                    <h2
+                      className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+                    >
                       Destinations
                     </h2>
                     <button
@@ -279,15 +305,17 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                         setActiveTrip(trip);
                         router.push('/destinations');
                       }}
-                      className="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                      className="cursor-pointer inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
                     >
                       Add Destinations
                     </button>
                   </div>
 
                   {!trip.destinations || trip.destinations.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
+                    <div className="text-center py-8 sm:py-12">
+                      <div
+                        className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
+                      >
                         <svg
                           fill="none"
                           stroke="currentColor"
@@ -307,10 +335,14 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                           />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      <h3
+                        className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+                      >
                         No destinations yet
                       </h3>
-                      <p className="text-gray-500 mb-4">
+                      <p
+                        className={`mb-4 text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+                      >
                         Start building your itinerary by adding some
                         destinations to visit.
                       </p>
@@ -326,20 +358,19 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {trip.destinations.map((destination) => (
-                          <div
-                            key={destination.id}
-                            className="space-y-3 p-4 border-2 border-gray-200 rounded-lg bg-gray-50"
-                          >
+                          <div key={destination.id} className="space-y-3">
                             <DestinationMiniCard
                               destination={destination}
                               onRemove={() =>
-                                handleRemoveDestination(destination.id)
+                                handleRemoveDestination(
+                                  destination.id,
+                                  destination.name
+                                )
                               }
                               activityImage={getDestinationImage(destination)}
                             />
-                            {/* Browse activities button */}
                             <button
                               onClick={() => {
                                 setSelectedDestinationId(destination.id);
@@ -353,21 +384,31 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                         ))}
                       </div>
 
-                      {/* Quick activity preview */}
-                      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-blue-900">
+                      {/* FIX #3: Improved "Get Started" button layout */}
+                      <div
+                        className={`mt-6 p-4 border rounded-lg ${
+                          isDark
+                            ? 'bg-blue-900/30 border-blue-700/50'
+                            : 'bg-blue-50 border-blue-200'
+                        }`}
+                      >
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
+                          <div className="flex-1">
+                            <h3
+                              className={`font-medium ${isDark ? 'text-blue-300' : 'text-blue-900'}`}
+                            >
                               Ready to plan activities?
                             </h3>
-                            <p className="text-sm text-blue-700 mt-1">
+                            <p
+                              className={`text-sm mt-1 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}
+                            >
                               Browse Google Places activities for your
                               destinations and create your itinerary.
                             </p>
                           </div>
                           <button
                             onClick={() => setActiveTab('activities')}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                            className="w-full lg:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
                           >
                             Get Started
                           </button>
@@ -381,7 +422,7 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
           )}
 
           {activeTab === 'timeline' && trip && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <BudgetTracker tripId={tripId} trip={trip} />
               <TripTimeline tripId={tripId} trip={trip} />
             </div>
@@ -391,22 +432,32 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
             <div>
               {/* Destination selector for multiple destinations */}
               {trip.destinations && trip.destinations.length > 1 && (
-                <div className="mb-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-5">
+                <div
+                  className={`mb-4 sm:mb-6 border-2 rounded-lg p-4 sm:p-5 ${
+                    isDark
+                      ? 'bg-blue-900/30 border-blue-700/50'
+                      : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
                   <div className="flex items-center mb-3">
                     <span className="text-lg mr-2">🗺️</span>
-                    <h3 className="text-sm font-semibold text-blue-900">
+                    <h3
+                      className={`text-sm font-semibold ${isDark ? 'text-blue-300' : 'text-blue-900'}`}
+                    >
                       Choose your destination:
                     </h3>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
                     {trip.destinations.map((destination) => (
                       <button
                         key={destination.id}
                         onClick={() => setSelectedDestinationId(destination.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border-2 ${
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors border-2 ${
                           selectedDestinationId === destination.id
                             ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-400 shadow-sm'
+                            : isDark
+                              ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600 hover:border-gray-500'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-400 shadow-sm'
                         }`}
                       >
                         {getCountryFlag(destination.country)} {destination.name}
@@ -423,12 +474,22 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                   tripId={tripId}
                 />
               ) : (
-                <div className="text-center py-12 bg-white rounded-lg shadow">
-                  <div className="text-6xl mb-4">📍</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <div
+                  className={`text-center py-8 sm:py-12 rounded-lg shadow-lg ${
+                    isDark
+                      ? 'bg-gray-800 border border-gray-700 shadow-purple-500/25'
+                      : 'bg-white border border-gray-300 shadow-gray-400/20'
+                  }`}
+                >
+                  <div className="text-4xl sm:text-6xl mb-4">📍</div>
+                  <h3
+                    className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+                  >
                     Select a destination to browse activities
                   </h3>
-                  <p className="text-gray-500">
+                  <p
+                    className={`text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+                  >
                     Choose a destination to see available activities with Google
                     Places data.
                   </p>
@@ -445,8 +506,20 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
               onCancel={() => setShowDeleteConfirm(false)}
             />
           )}
+
+          {showDeleteDestinationConfirm && destinationToDelete && (
+            <DeleteDestinationModal
+              destinationName={destinationToDelete.name}
+              isDeleting={deleteDestinationMutation.isPending}
+              onConfirm={confirmRemoveDestination}
+              onCancel={() => {
+                setShowDeleteDestinationConfirm(false);
+                setDestinationToDelete(null);
+              }}
+            />
+          )}
         </main>
       )}
-    </div>
+    </>
   );
 }

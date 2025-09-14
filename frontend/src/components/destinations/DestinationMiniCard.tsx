@@ -63,13 +63,7 @@ export function DestinationMiniCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (
-              window.confirm(
-                `Remove ${destination.name} from this trip? This will also delete all planned activities for this destination.`
-              )
-            ) {
-              onRemove();
-            }
+            onRemove();
           }}
           className="absolute top-2 right-2 w-6 h-6 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold shadow-lg"
           title={`Remove ${destination.name}`}

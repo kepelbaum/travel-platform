@@ -1,19 +1,18 @@
-import { Trip } from '@/types';
 import { useThemeStore } from '@/store/theme';
 
-interface DeleteTripModalProps {
-  trip: Trip;
+interface DeleteDestinationModalProps {
+  destinationName: string;
   isDeleting: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function DeleteTripModal({
-  trip,
+export function DeleteDestinationModal({
+  destinationName,
   isDeleting,
   onConfirm,
   onCancel,
-}: DeleteTripModalProps) {
+}: DeleteDestinationModalProps) {
   const { isDark } = useThemeStore();
 
   return (
@@ -34,7 +33,7 @@ export function DeleteTripModal({
             isDark ? 'text-gray-100' : 'text-gray-900'
           }`}
         >
-          Delete Trip
+          Remove Destination
         </h3>
 
         <p
@@ -42,8 +41,8 @@ export function DeleteTripModal({
             isDark ? 'text-gray-400' : 'text-gray-500'
           }`}
         >
-          Are you sure you want to delete "{trip.name}"? This action cannot be
-          undone.
+          Are you sure you want to remove "{destinationName}" from this trip?
+          This will also remove all associated activities.
         </p>
 
         <div className="flex space-x-3">
@@ -59,7 +58,7 @@ export function DeleteTripModal({
             {isDeleting && (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             )}
-            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+            <span>{isDeleting ? 'Removing...' : 'Remove'}</span>
           </button>
 
           <button

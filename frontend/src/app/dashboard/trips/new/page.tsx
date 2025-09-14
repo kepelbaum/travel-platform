@@ -1,19 +1,14 @@
-import { Metadata } from 'next';
-import Header from '@/components/layout/Header';
-import TripForm from '@/components/forms/TripForm';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Create Trip | VoidWander',
-  description: 'Create a new trip and start planning your adventure.',
-};
+import TripForm from '@/components/forms/TripForm';
+import { useThemeStore } from '@/store/theme';
 
 export default function NewTripPage() {
+  const { isDark } = useThemeStore();
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="py-12">
-        <TripForm />
-      </main>
-    </div>
+    <main className="py-12 pb-32 sm:pb-24">
+      <TripForm />
+    </main>
   );
 }

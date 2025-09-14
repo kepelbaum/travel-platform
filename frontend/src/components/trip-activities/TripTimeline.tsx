@@ -6,6 +6,7 @@ import { TripActivity } from '@/types';
 import { tripActivitiesApi } from '@/lib/api';
 import { EditTripActivityModal } from '@/components/trip-activities/EditTripActivityModal';
 import { Trip } from '@/types';
+import { useThemeStore } from '@/store/theme';
 
 interface TripTimelineProps {
   tripId: number;
@@ -62,6 +63,7 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
   const [editingActivity, setEditingActivity] = useState<TripActivity | null>(
     null
   );
+  const { isDark } = useThemeStore();
   const queryClient = useQueryClient();
 
   const {
@@ -332,13 +334,26 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="h-6 bg-gray-200 rounded mb-4 animate-pulse"></div>
+          <div
+            key={i}
+            className={`rounded-lg p-6 shadow-sm ${
+              isDark
+                ? 'bg-gray-800 border border-gray-700'
+                : 'bg-white border border-gray-200'
+            }`}
+          >
+            <div
+              className={`h-6 rounded mb-4 animate-pulse ${
+                isDark ? 'bg-gray-900' : 'bg-gray-200'
+              }`}
+            ></div>
             <div className="space-y-3">
               {[...Array(2)].map((_, j) => (
                 <div
                   key={j}
-                  className="h-16 bg-gray-100 rounded animate-pulse"
+                  className={`h-16 rounded animate-pulse ${
+                    isDark ? 'bg-gray-900' : 'bg-gray-100'
+                  }`}
                 ></div>
               ))}
             </div>
@@ -351,7 +366,9 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600 mb-4">Failed to load timeline</p>
+        <p className={`mb-4 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+          Failed to load timeline
+        </p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -364,12 +381,22 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
 
   if (sortedValidGroups.length === 0 && invalidActivities.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+      <div
+        className={`text-center py-12 rounded-lg shadow-sm ${
+          isDark
+            ? 'bg-gray-800 border border-gray-700'
+            : 'bg-white border border-gray-200'
+        }`}
+      >
         <div className="text-6xl mb-4">📅</div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <h3
+          className={`text-lg font-medium mb-2 ${
+            isDark ? 'text-gray-100' : 'text-gray-900'
+          }`}
+        >
           No activities scheduled
         </h3>
-        <p className="text-gray-500">
+        <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>
           Browse activities to start planning your trip.
         </p>
       </div>
@@ -379,20 +406,28 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Trip Timeline</h2>
-        <p className="text-sm text-gray-600">
+        <h2
+          className={`text-xl font-bold ${
+            isDark ? 'text-gray-100' : 'text-gray-900'
+          }`}
+        >
+          Trip Timeline
+        </h2>
+        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           {sortedValidGroups.length}{' '}
           {sortedValidGroups.length === 1 ? 'section' : 'sections'} •{' '}
           {validActivitiesByDate.length} activities
           {invalidActivities.length > 0 && (
-            <span className="text-red-600 ml-2">
+            <span
+              className={`ml-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}
+            >
               • {invalidActivities.length} outside trip dates
             </span>
           )}
         </p>
       </div>
 
-      {/* Valid Activities - no special header, just display normally */}
+      {/* Valid Activities */}
       {sortedValidGroups.map((group) => {
         const dayActivities = group.activities;
         const totalDuration = dayActivities.reduce(
@@ -407,20 +442,42 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
         return (
           <div
             key={`valid-${group.date}-${group.timezone}`}
-            className="bg-white rounded-lg shadow-sm overflow-hidden"
+            className={`rounded-lg shadow-sm overflow-hidden ${
+              isDark
+                ? 'bg-gray-800 border border-gray-700 shadow-purple-500/25'
+                : 'bg-white border border-gray-200 shadow-gray-400/20'
+            }`}
           >
             {/* Date header with timezone info */}
-            <div className="bg-gray-50 px-6 py-4 border-b">
+            <div
+              className={`px-6 py-4 border-b ${
+                isDark
+                  ? 'bg-gray-900 border-gray-600'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3
+                    className={`text-lg font-semibold ${
+                      isDark ? 'text-gray-100' : 'text-gray-900'
+                    }`}
+                  >
                     {formatDate(group.date)}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p
+                    className={`text-sm mt-1 ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}
+                  >
                     {getTimezoneDisplayName(group.timezone)}
                   </p>
                 </div>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <div
+                  className={`flex items-center space-x-4 text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}
+                >
                   <span>
                     ⏱️ {Math.floor(totalDuration / 60)}h {totalDuration % 60}m
                   </span>
@@ -435,7 +492,12 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
               {dayActivities.map((tripActivity) => {
                 if (!tripActivity.activity) {
                   return (
-                    <div key={tripActivity.id} className="text-red-500 text-sm">
+                    <div
+                      key={tripActivity.id}
+                      className={`text-sm ${
+                        isDark ? 'text-red-400' : 'text-red-500'
+                      }`}
+                    >
                       Error: Activity data missing for scheduled item
                     </div>
                   );
@@ -447,19 +509,27 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                 return (
                   <div
                     key={tripActivity.id}
-                    className={`relative flex items-start space-x-4 pb-4 border-b border-gray-100 last:border-b-0 ${
+                    className={`relative flex items-start space-x-4 pb-4 border-b last:border-b-0 ${
+                      isDark ? 'border-gray-700' : 'border-gray-100'
+                    } ${
                       hasVenueIssue
-                        ? 'bg-red-50 border-red-200 rounded-lg p-3 -mx-3'
+                        ? isDark
+                          ? 'bg-red-900/20 border-red-800/50 rounded-lg p-3 -mx-3'
+                          : 'bg-red-50 border-red-200 rounded-lg p-3 -mx-3'
                         : ''
                     }`}
                   >
                     {/* Time display */}
                     <div className="flex-shrink-0 w-24 text-right">
                       <div
-                        className={`px-2 py-1 rounded text-sm font-medium ${
+                        className={`text-sm font-medium ${
                           hasVenueIssue
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? isDark
+                              ? 'text-red-400'
+                              : 'text-red-600'
+                            : isDark
+                              ? 'text-blue-400'
+                              : 'text-blue-600'
                         }`}
                       >
                         <TimezoneDisplay
@@ -468,9 +538,12 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                           time={tripActivity.startTime}
                           className=""
                         />
-                        {hasVenueIssue && <div className="text-xs">⚠️</div>}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div
+                        className={`text-xs mt-1 ${
+                          isDark ? 'text-gray-500' : 'text-gray-500'
+                        }`}
+                      >
                         to{' '}
                         {formatEndTime(
                           tripActivity.startTime,
@@ -490,7 +563,11 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                             className="w-16 h-16 rounded-lg object-cover"
                           />
                         ) : (
-                          <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
+                          <div
+                            className={`w-16 h-16 rounded-lg flex items-center justify-center text-2xl ${
+                              isDark ? 'bg-gray-900' : 'bg-gray-200'
+                            }`}
+                          >
                             🏛️
                           </div>
                         )}
@@ -498,15 +575,27 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
 
                       {/* Details */}
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">
+                        <h4
+                          className={`font-medium ${
+                            isDark ? 'text-gray-100' : 'text-gray-900'
+                          }`}
+                        >
                           {tripActivity.activity.name}
                           {hasVenueIssue && (
-                            <span className="ml-2 text-xs text-red-600 font-normal">
+                            <span
+                              className={`ml-2 text-xs font-normal ${
+                                isDark ? 'text-red-400' : 'text-red-600'
+                              }`}
+                            >
                               (Venue Closed!)
                             </span>
                           )}
                         </h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p
+                          className={`text-sm mt-1 ${
+                            isDark ? 'text-gray-400' : 'text-gray-600'
+                          }`}
+                        >
                           {tripActivity.activity.category?.replace(/_/g, ' ') ||
                             'Activity'}{' '}
                           •
@@ -515,15 +604,29 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                             : ' Duration TBD'}
                         </p>
                         {tripActivity.activity.address && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p
+                            className={`text-xs mt-1 ${
+                              isDark ? 'text-gray-500' : 'text-gray-500'
+                            }`}
+                          >
                             📍 {tripActivity.activity.address}
                           </p>
                         )}
 
                         {/* Venue hours warning */}
                         {hasVenueIssue && venueCheck.message && (
-                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-                            <p className="text-sm text-red-700">
+                          <div
+                            className={`mt-2 p-2 border rounded ${
+                              isDark
+                                ? 'bg-red-900/20 border-red-800/50'
+                                : 'bg-red-50 border-red-200'
+                            }`}
+                          >
+                            <p
+                              className={`text-sm ${
+                                isDark ? 'text-red-400' : 'text-red-700'
+                              }`}
+                            >
                               <span className="font-medium">Warning:</span>{' '}
                               {venueCheck.message}
                             </p>
@@ -531,8 +634,18 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                         )}
 
                         {tripActivity.notes && (
-                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                            <p className="text-sm text-gray-700">
+                          <div
+                            className={`mt-2 p-2 border rounded ${
+                              isDark
+                                ? 'bg-yellow-900/20 border-yellow-700/50'
+                                : 'bg-yellow-50 border-yellow-200'
+                            }`}
+                          >
+                            <p
+                              className={`text-sm ${
+                                isDark ? 'text-yellow-300' : 'text-gray-700'
+                              }`}
+                            >
                               <span className="font-medium">Note:</span>{' '}
                               {tripActivity.notes}
                             </p>
@@ -543,11 +656,19 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                       {/* Cost and Actions */}
                       <div className="text-right space-y-2">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p
+                            className={`text-sm font-medium ${
+                              isDark ? 'text-gray-100' : 'text-gray-900'
+                            }`}
+                          >
                             ${tripActivity.activity.estimatedCost || 0}
                           </p>
                           {tripActivity.activity.rating && (
-                            <p className="text-xs text-gray-600">
+                            <p
+                              className={`text-xs ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}
+                            >
                               ⭐ {tripActivity.activity.rating.toFixed(1)}
                             </p>
                           )}
@@ -558,7 +679,11 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                           <button
                             type="button"
                             onClick={() => handleEdit(tripActivity)}
-                            className="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 rounded border border-blue-200 transition-colors"
+                            className={`px-3 py-1 text-xs border rounded transition-colors ${
+                              isDark
+                                ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-800/30 hover:text-blue-300 border-blue-700/50'
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border-blue-200'
+                            }`}
                             title="Edit activity"
                           >
                             Edit
@@ -567,7 +692,11 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                             type="button"
                             onClick={() => handleDelete(tripActivity)}
                             disabled={deleteMutation.isPending}
-                            className="px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 rounded border border-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className={`px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                              isDark
+                                ? 'bg-red-900/30 text-red-400 hover:bg-red-800/30 hover:text-red-300 border-red-700/50'
+                                : 'bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border-red-200'
+                            }`}
                             title="Remove activity"
                           >
                             {deleteMutation.isPending
@@ -585,18 +714,44 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
         );
       })}
 
-      {/* Invalid Activities Section - only show if there are any */}
+      {/* Invalid Activities Section */}
       {invalidActivities.length > 0 && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg overflow-hidden">
+        <div
+          className={`border-2 rounded-lg overflow-hidden ${
+            isDark
+              ? 'bg-red-900/10 border-red-800/50'
+              : 'bg-red-50 border-red-200'
+          }`}
+        >
           {/* Warning header */}
-          <div className="bg-red-100 px-6 py-4 border-b border-red-200">
+          <div
+            className={`px-6 py-4 border-b ${
+              isDark
+                ? 'bg-red-900/20 border-red-800/50'
+                : 'bg-red-100 border-red-200'
+            }`}
+          >
             <div className="flex items-center">
-              <span className="text-red-600 text-xl mr-3">⚠️</span>
+              <span
+                className={`text-xl mr-3 ${
+                  isDark ? 'text-red-400' : 'text-red-600'
+                }`}
+              >
+                ⚠️
+              </span>
               <div>
-                <h3 className="text-lg font-semibold text-red-900">
+                <h3
+                  className={`text-lg font-semibold ${
+                    isDark ? 'text-red-300' : 'text-red-900'
+                  }`}
+                >
                   Activities Outside Trip Dates
                 </h3>
-                <p className="text-sm text-red-700 mt-1">
+                <p
+                  className={`text-sm mt-1 ${
+                    isDark ? 'text-red-400' : 'text-red-700'
+                  }`}
+                >
                   These activities are scheduled outside your trip dates (
                   {formatDate(trip.startDate)} - {formatDate(trip.endDate)}) and
                   are not included in budget calculations.
@@ -612,10 +767,24 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
 
               return (
                 <div key={`invalid-${date}`}>
-                  <h4 className="text-md font-medium text-red-800 mb-3 flex items-center">
-                    <span className="text-red-600 mr-2">📅</span>
+                  <h4
+                    className={`text-md font-medium mb-3 flex items-center ${
+                      isDark ? 'text-red-300' : 'text-red-800'
+                    }`}
+                  >
+                    <span
+                      className={`mr-2 ${
+                        isDark ? 'text-red-400' : 'text-red-600'
+                      }`}
+                    >
+                      📅
+                    </span>
                     {formatDate(date)}
-                    <span className="text-sm font-normal text-red-600 ml-2">
+                    <span
+                      className={`text-sm font-normal ml-2 ${
+                        isDark ? 'text-red-400' : 'text-red-600'
+                      }`}
+                    >
                       ({dayActivities.length} activities)
                     </span>
                   </h4>
@@ -624,17 +793,24 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                     {dayActivities.map((tripActivity) => (
                       <div
                         key={tripActivity.id}
-                        className="bg-white border border-red-200 rounded-lg p-4 flex items-start space-x-4"
+                        className={`border rounded-lg p-4 flex items-start space-x-4 ${
+                          isDark
+                            ? 'bg-gray-800 border-red-800/50'
+                            : 'bg-white border-red-200'
+                        }`}
                       >
-                        {/* Time display with warning indicator */}
+                        {/* Time display */}
                         <div className="flex-shrink-0 w-20 text-right">
-                          <div className="px-2 py-1 rounded text-sm font-medium bg-red-100 text-red-800">
+                          <div
+                            className={`text-sm font-medium ${
+                              isDark ? 'text-red-400' : 'text-red-600'
+                            }`}
+                          >
                             <TimezoneDisplay
                               timezone={tripActivity.timezone || 'UTC'}
                               date={tripActivity.plannedDate}
                               time={tripActivity.startTime}
                             />
-                            <div className="text-xs">⚠️</div>
                           </div>
                         </div>
 
@@ -648,20 +824,36 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                                 className="w-12 h-12 rounded-lg object-cover opacity-75"
                               />
                             ) : (
-                              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-lg opacity-75">
+                              <div
+                                className={`w-12 h-12 rounded-lg flex items-center justify-center text-lg opacity-75 ${
+                                  isDark ? 'bg-gray-900' : 'bg-gray-200'
+                                }`}
+                              >
                                 🏛️
                               </div>
                             )}
                           </div>
 
                           <div className="flex-1">
-                            <h5 className="font-medium text-red-900">
+                            <h5
+                              className={`font-medium ${
+                                isDark ? 'text-red-300' : 'text-red-900'
+                              }`}
+                            >
                               {tripActivity.activity.name}
-                              <span className="ml-2 text-xs text-red-600 font-normal">
+                              <span
+                                className={`ml-2 text-xs font-normal ${
+                                  isDark ? 'text-red-400' : 'text-red-600'
+                                }`}
+                              >
                                 (Outside trip dates)
                               </span>
                             </h5>
-                            <p className="text-sm text-red-700 mt-1">
+                            <p
+                              className={`text-sm mt-1 ${
+                                isDark ? 'text-red-400' : 'text-red-700'
+                              }`}
+                            >
                               {tripActivity.activity.category?.replace(
                                 /_/g,
                                 ' '
@@ -672,8 +864,18 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                                 : ' Duration TBD'}
                             </p>
                             {tripActivity.notes && (
-                              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-300 rounded">
-                                <p className="text-sm text-gray-700">
+                              <div
+                                className={`mt-2 p-2 border rounded ${
+                                  isDark
+                                    ? 'bg-yellow-900/20 border-yellow-700/50'
+                                    : 'bg-yellow-50 border-yellow-300'
+                                }`}
+                              >
+                                <p
+                                  className={`text-sm ${
+                                    isDark ? 'text-yellow-300' : 'text-gray-700'
+                                  }`}
+                                >
                                   <span className="font-medium">Note:</span>{' '}
                                   {tripActivity.notes}
                                 </p>
@@ -681,18 +883,26 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                             )}
                           </div>
 
-                          {/* Actions - only delete, no edit */}
+                          {/* Actions */}
                           <div className="text-right space-y-1">
                             <button
                               onClick={() => handleEdit(tripActivity)}
-                              className="block w-full px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded border border-blue-200 transition-colors"
+                              className={`block w-full px-3 py-1 text-xs border rounded transition-colors ${
+                                isDark
+                                  ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-800/30 border-blue-700/50'
+                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200'
+                              }`}
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDelete(tripActivity)}
                               disabled={deleteMutation.isPending}
-                              className="block w-full px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded border border-red-200 disabled:opacity-50 transition-colors"
+                              className={`block w-full px-3 py-1 text-xs border rounded disabled:opacity-50 transition-colors ${
+                                isDark
+                                  ? 'bg-red-900/30 text-red-400 hover:bg-red-800/30 border-red-700/50'
+                                  : 'bg-red-100 text-red-700 hover:bg-red-200 border-red-200'
+                              }`}
                             >
                               {deleteMutation.isPending
                                 ? 'Removing...'
