@@ -6,6 +6,7 @@ import ActivityCard from './ActivityCard';
 import ActivityDetailsModal from './ActivityDetailsModal';
 import { Activity } from '@/types';
 import { activitiesApi, ActivitiesResponse } from '@/lib/api';
+import { useThemeStore } from '@/store/theme';
 
 interface ActivityBrowserProps {
   destinationId: number;
@@ -16,6 +17,7 @@ export default function ActivityBrowser({
   destinationId,
   tripId,
 }: ActivityBrowserProps) {
+  const { isDark } = useThemeStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [page, setPage] = useState(1);
@@ -128,7 +130,9 @@ export default function ActivityBrowser({
     return (
       <div className="flex items-center justify-between py-6">
         {/* Left: Results info */}
-        <div className="text-sm text-gray-600">
+        <div
+          className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+        >
           Showing {(currentPage - 1) * 20 + 1}-
           {Math.min(currentPage * 20, totalCount)} of {totalCount} activities
         </div>
@@ -139,7 +143,11 @@ export default function ActivityBrowser({
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1 || isLoading}
-            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-3 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isDark
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
             ← Previous
           </button>
@@ -151,11 +159,19 @@ export default function ActivityBrowser({
               <>
                 <button
                   onClick={() => goToPage(1)}
-                  className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                  className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                    isDark
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   1
                 </button>
-                {currentPage > 4 && <span className="text-gray-400">...</span>}
+                {currentPage > 4 && (
+                  <span className={isDark ? 'text-gray-500' : 'text-gray-400'}>
+                    ...
+                  </span>
+                )}
               </>
             )}
 
@@ -179,11 +195,13 @@ export default function ActivityBrowser({
                   key={pageNum}
                   onClick={() => goToPage(pageNum)}
                   disabled={isLoading}
-                  className={`px-3 py-2 text-sm rounded-md ${
+                  className={`px-3 py-2 text-sm rounded-md disabled:opacity-50 transition-colors ${
                     pageNum === currentPage
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  } disabled:opacity-50`}
+                      : isDark
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   {pageNum}
                 </button>
@@ -194,11 +212,17 @@ export default function ActivityBrowser({
             {currentPage < totalPages - 2 && (
               <>
                 {currentPage < totalPages - 3 && (
-                  <span className="text-gray-400">...</span>
+                  <span className={isDark ? 'text-gray-500' : 'text-gray-400'}>
+                    ...
+                  </span>
                 )}
                 <button
                   onClick={() => goToPage(totalPages)}
-                  className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                  className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                    isDark
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   {totalPages}
                 </button>
@@ -210,7 +234,11 @@ export default function ActivityBrowser({
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages || isLoading}
-            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-3 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isDark
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
             Next →
           </button>
@@ -218,11 +246,19 @@ export default function ActivityBrowser({
 
         {/* Right: Quick jump */}
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600">Go to:</span>
+          <span
+            className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+          >
+            Go to:
+          </span>
           <select
             value={currentPage}
             onChange={(e) => goToPage(Number(e.target.value))}
-            className="px-2 py-1 text-sm border rounded-md focus:ring-2 focus:ring-blue-500"
+            className={`px-2 py-1 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 ${
+              isDark
+                ? 'bg-gray-700 border-gray-600 text-gray-300'
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
           >
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(
               (pageNum) => (
@@ -243,7 +279,9 @@ export default function ActivityBrowser({
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="h-96 bg-gray-200 rounded-lg animate-pulse"
+            className={`h-96 rounded-lg animate-pulse ${
+              isDark ? 'bg-gray-700' : 'bg-gray-200'
+            }`}
           ></div>
         ))}
       </div>
@@ -253,10 +291,12 @@ export default function ActivityBrowser({
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600 mb-4">Failed to load activities</p>
+        <p className={`mb-4 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+          Failed to load activities
+        </p>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Try Again
         </button>
@@ -269,8 +309,14 @@ export default function ActivityBrowser({
       {/* Header with pagination info */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Activities</h2>
-          <p className="text-sm text-gray-500">
+          <h2
+            className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+          >
+            Activities
+          </h2>
+          <p
+            className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+          >
             {totalCount} total activities • Page {currentPage} of {totalPages}
           </p>
         </div>
@@ -283,10 +329,18 @@ export default function ActivityBrowser({
       </div>
 
       {/* Search and filter */}
-      <div className="bg-white border-2 border-gray-300 rounded-lg shadow-md p-5 space-y-4">
+      <div
+        className={`border-2 rounded-lg shadow-md p-5 space-y-4 ${
+          isDark
+            ? 'bg-gray-800 border-gray-700 shadow-purple-500/25'
+            : 'bg-white border-gray-300 shadow-gray-400/20'
+        }`}
+      >
         <div className="flex items-center mb-3">
           <span className="text-lg mr-2">🔍</span>
-          <h3 className="text-sm font-semibold text-gray-700">
+          <h3
+            className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+          >
             Search & Filter Activities
           </h3>
         </div>
@@ -297,12 +351,20 @@ export default function ActivityBrowser({
             placeholder="Search activities..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={`flex-1 px-4 py-2 border-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              isDark
+                ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+            }`}
           />
           <select
             value={selectedCategory}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className="px-4 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={`px-4 py-2 border-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              isDark
+                ? 'bg-gray-700 border-gray-600 text-gray-100'
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
           >
             <option value="all">All Categories</option>
             {categories?.map((cat: string) => (
@@ -315,14 +377,20 @@ export default function ActivityBrowser({
 
         {/* Quick filters */}
         <div>
-          <p className="text-xs text-gray-600 mb-2">Quick filters:</p>
+          <p
+            className={`text-xs mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+          >
+            Quick filters:
+          </p>
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => handleCategoryChange('all')}
               className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
                 selectedCategory === 'all'
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                  : isDark
+                    ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-300'
+                    : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
               }`}
             >
               📋 All
@@ -349,7 +417,9 @@ export default function ActivityBrowser({
                   className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
                     selectedCategory === cat
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                      : isDark
+                        ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-300'
+                        : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
                   }`}
                 >
                   {getCategoryIcon(cat)} {cat.replace(/_/g, ' ')}
@@ -363,10 +433,16 @@ export default function ActivityBrowser({
       {/* Loading overlay for page changes */}
       {isLoading && page > 1 && (
         <div className="relative">
-          <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center">
+          <div
+            className={`absolute inset-0 bg-opacity-75 z-10 flex items-center justify-center ${
+              isDark ? 'bg-gray-800' : 'bg-white'
+            }`}
+          >
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="text-gray-600">Loading page {page}...</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+                Loading page {page}...
+              </span>
             </div>
           </div>
         </div>
@@ -377,7 +453,11 @@ export default function ActivityBrowser({
         {processedActivities.activities.map((activity: Activity) => (
           <div
             key={activity.id}
-            className="border-2 border-gray-200 rounded-xl p-2 bg-white"
+            className={`border-2 rounded-xl p-2 ${
+              isDark
+                ? 'border-gray-700 bg-gray-800'
+                : 'border-gray-200 bg-white'
+            }`}
           >
             <ActivityCard
               activity={activity}
@@ -392,7 +472,9 @@ export default function ActivityBrowser({
       <PaginationControls />
 
       {processedActivities.activities.length === 0 && !isLoading && (
-        <div className="text-center py-8 text-gray-500">
+        <div
+          className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+        >
           <p>No activities found. Try adjusting your search.</p>
         </div>
       )}

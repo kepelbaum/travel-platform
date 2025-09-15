@@ -52,9 +52,7 @@ function TimezoneDisplay({
 
   return (
     <span className={className} title={`${timezone}`}>
-      {formattedTime}
-      <br />
-      <span className="text-xs opacity-75">{tzDisplay}</span>
+      {formattedTime} {tzDisplay}
     </span>
   );
 }
@@ -456,7 +454,7 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                   : 'bg-gray-50 border-gray-200'
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3
                     className={`text-lg font-semibold ${
@@ -474,7 +472,7 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                   </p>
                 </div>
                 <div
-                  className={`flex items-center space-x-4 text-sm ${
+                  className={`flex flex-wrap items-center space-x-4 text-sm mt-2 sm:mt-0 ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}
                 >
@@ -488,135 +486,356 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
             </div>
 
             {/* Activities */}
-            <div className="p-6 space-y-4">
-              {dayActivities.map((tripActivity) => {
-                if (!tripActivity.activity) {
+            <div className="p-6">
+              {/* Desktop/Tablet view - original layout */}
+              <div className="hidden md:block space-y-4">
+                {dayActivities.map((tripActivity) => {
+                  if (!tripActivity.activity) {
+                    return (
+                      <div
+                        key={tripActivity.id}
+                        className={`text-sm ${
+                          isDark ? 'text-red-400' : 'text-red-500'
+                        }`}
+                      >
+                        Error: Activity data missing for scheduled item
+                      </div>
+                    );
+                  }
+
+                  const venueCheck = checkVenueHours(tripActivity);
+                  const hasVenueIssue = !venueCheck.isOpen;
+
                   return (
                     <div
                       key={tripActivity.id}
-                      className={`text-sm ${
-                        isDark ? 'text-red-400' : 'text-red-500'
+                      className={`relative flex items-start space-x-4 pb-4 border-b last:border-b-0 ${
+                        isDark ? 'border-gray-700' : 'border-gray-100'
+                      } ${
+                        hasVenueIssue
+                          ? isDark
+                            ? 'bg-red-900/20 border-red-800/50 rounded-lg p-3 -mx-3'
+                            : 'bg-red-50 border-red-200 rounded-lg p-3 -mx-3'
+                          : ''
                       }`}
                     >
-                      Error: Activity data missing for scheduled item
-                    </div>
-                  );
-                }
-
-                const venueCheck = checkVenueHours(tripActivity);
-                const hasVenueIssue = !venueCheck.isOpen;
-
-                return (
-                  <div
-                    key={tripActivity.id}
-                    className={`relative flex items-start space-x-4 pb-4 border-b last:border-b-0 ${
-                      isDark ? 'border-gray-700' : 'border-gray-100'
-                    } ${
-                      hasVenueIssue
-                        ? isDark
-                          ? 'bg-red-900/20 border-red-800/50 rounded-lg p-3 -mx-3'
-                          : 'bg-red-50 border-red-200 rounded-lg p-3 -mx-3'
-                        : ''
-                    }`}
-                  >
-                    {/* Time display */}
-                    <div className="flex-shrink-0 w-24 text-right">
-                      <div
-                        className={`text-sm font-medium ${
-                          hasVenueIssue
-                            ? isDark
-                              ? 'text-red-400'
-                              : 'text-red-600'
-                            : isDark
-                              ? 'text-blue-400'
-                              : 'text-blue-600'
-                        }`}
-                      >
-                        <TimezoneDisplay
-                          timezone={tripActivity.timezone || 'UTC'}
-                          date={tripActivity.plannedDate}
-                          time={tripActivity.startTime}
-                          className=""
-                        />
-                      </div>
-                      <div
-                        className={`text-xs mt-1 ${
-                          isDark ? 'text-gray-500' : 'text-gray-500'
-                        }`}
-                      >
-                        to{' '}
-                        {formatEndTime(
-                          tripActivity.startTime,
-                          tripActivity.durationMinutes || 0
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Activity details */}
-                    <div className="flex-1 flex items-start space-x-4">
-                      {/* Photo */}
-                      <div className="flex-shrink-0">
-                        {tripActivity.activity.photoUrl ? (
-                          <img
-                            src={tripActivity.activity.photoUrl}
-                            alt={tripActivity.activity.name}
-                            className="w-16 h-16 rounded-lg object-cover"
+                      {/* Time display */}
+                      <div className="flex-shrink-0 w-24 text-right">
+                        <div
+                          className={`text-sm font-medium ${
+                            hasVenueIssue
+                              ? isDark
+                                ? 'text-red-400'
+                                : 'text-red-800'
+                              : isDark
+                                ? 'text-blue-400'
+                                : 'text-blue-800'
+                          }`}
+                        >
+                          <TimezoneDisplay
+                            timezone={tripActivity.timezone || 'UTC'}
+                            date={tripActivity.plannedDate}
+                            time={tripActivity.startTime}
+                            className=""
                           />
-                        ) : (
-                          <div
-                            className={`w-16 h-16 rounded-lg flex items-center justify-center text-2xl ${
-                              isDark ? 'bg-gray-900' : 'bg-gray-200'
+                          {hasVenueIssue && <div className="text-xs">⚠️</div>}
+                        </div>
+                        <div
+                          className={`text-xs mt-1 ${
+                            isDark ? 'text-gray-500' : 'text-gray-500'
+                          }`}
+                        >
+                          to{' '}
+                          {formatEndTime(
+                            tripActivity.startTime,
+                            tripActivity.durationMinutes || 0
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Activity details */}
+                      <div className="flex-1 flex items-start space-x-4">
+                        {/* Photo */}
+                        <div className="flex-shrink-0">
+                          {tripActivity.activity.photoUrl ? (
+                            <img
+                              src={tripActivity.activity.photoUrl}
+                              alt={tripActivity.activity.name}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div
+                              className={`w-16 h-16 rounded-lg flex items-center justify-center text-2xl ${
+                                isDark ? 'bg-gray-900' : 'bg-gray-200'
+                              }`}
+                            >
+                              🏛️
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex-1">
+                          <h4
+                            className={`font-medium ${
+                              isDark ? 'text-gray-100' : 'text-gray-900'
                             }`}
                           >
+                            {tripActivity.activity.name}
+                            {hasVenueIssue && (
+                              <span
+                                className={`ml-2 text-xs font-normal ${
+                                  isDark ? 'text-red-400' : 'text-red-600'
+                                }`}
+                              >
+                                (Venue Closed!)
+                              </span>
+                            )}
+                          </h4>
+                          <p
+                            className={`text-sm mt-1 ${
+                              isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}
+                          >
+                            {tripActivity.activity.category?.replace(
+                              /_/g,
+                              ' '
+                            ) || 'Activity'}{' '}
+                            •
+                            {tripActivity.durationMinutes
+                              ? ` ${Math.floor(tripActivity.durationMinutes / 60)}h ${tripActivity.durationMinutes % 60}m`
+                              : ' Duration TBD'}
+                          </p>
+                          {tripActivity.activity.address && (
+                            <p
+                              className={`text-xs mt-1 ${
+                                isDark ? 'text-gray-500' : 'text-gray-500'
+                              }`}
+                            >
+                              📍 {tripActivity.activity.address}
+                            </p>
+                          )}
+
+                          {/* Venue hours warning */}
+                          {hasVenueIssue && venueCheck.message && (
+                            <div
+                              className={`mt-2 p-2 border rounded ${
+                                isDark
+                                  ? 'bg-red-900/20 border-red-800/50'
+                                  : 'bg-red-50 border-red-200'
+                              }`}
+                            >
+                              <p
+                                className={`text-sm ${
+                                  isDark ? 'text-red-400' : 'text-red-700'
+                                }`}
+                              >
+                                <span className="font-medium">Warning:</span>{' '}
+                                {venueCheck.message}
+                              </p>
+                            </div>
+                          )}
+
+                          {tripActivity.notes && (
+                            <div
+                              className={`mt-2 p-2 border rounded ${
+                                isDark
+                                  ? 'bg-yellow-900/20 border-yellow-700/50'
+                                  : 'bg-yellow-50 border-yellow-200'
+                              }`}
+                            >
+                              <p
+                                className={`text-sm ${
+                                  isDark ? 'text-yellow-300' : 'text-gray-700'
+                                }`}
+                              >
+                                <span className="font-medium">Note:</span>{' '}
+                                {tripActivity.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Cost and Actions */}
+                        <div className="text-right space-y-2">
+                          <div>
+                            <p
+                              className={`text-sm font-medium ${
+                                isDark ? 'text-gray-100' : 'text-gray-900'
+                              }`}
+                            >
+                              ${tripActivity.activity.estimatedCost || 0}
+                            </p>
+                            {tripActivity.activity.rating && (
+                              <p
+                                className={`text-xs ${
+                                  isDark ? 'text-gray-400' : 'text-gray-600'
+                                }`}
+                              >
+                                ⭐ {tripActivity.activity.rating.toFixed(1)}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex space-x-1">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(tripActivity)}
+                              className={`px-3 py-1 text-xs border rounded transition-colors ${
+                                isDark
+                                  ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-800/30 hover:text-blue-300 border-blue-700/50'
+                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border-blue-200'
+                              }`}
+                              title="Edit activity"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(tripActivity)}
+                              disabled={deleteMutation.isPending}
+                              className={`px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                                isDark
+                                  ? 'bg-red-900/30 text-red-400 hover:bg-red-800/30 hover:text-red-300 border-red-700/50'
+                                  : 'bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border-red-200'
+                              }`}
+                              title="Remove activity"
+                            >
+                              {deleteMutation.isPending
+                                ? 'Removing...'
+                                : 'Remove'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Mobile view - clean card design */}
+              <div className="block md:hidden space-y-4">
+                {dayActivities.map((tripActivity) => {
+                  if (!tripActivity.activity) {
+                    return (
+                      <div
+                        key={tripActivity.id}
+                        className={`text-sm ${
+                          isDark ? 'text-red-400' : 'text-red-500'
+                        }`}
+                      >
+                        Error: Activity data missing for scheduled item
+                      </div>
+                    );
+                  }
+
+                  const venueCheck = checkVenueHours(tripActivity);
+                  const hasVenueIssue = !venueCheck.isOpen;
+
+                  return (
+                    <div
+                      key={tripActivity.id}
+                      className={`rounded-lg overflow-hidden shadow-sm ${
+                        isDark
+                          ? 'bg-gray-800 border border-gray-600'
+                          : 'bg-white border border-gray-200'
+                      }`}
+                    >
+                      {/* Header Image with Text Overlay */}
+                      <div
+                        className={`relative h-32 ${
+                          isDark ? 'bg-gray-900' : 'bg-gray-200'
+                        }`}
+                        style={{
+                          backgroundImage: tripActivity.activity.photoUrl
+                            ? `url(${tripActivity.activity.photoUrl})`
+                            : 'none',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat',
+                        }}
+                      >
+                        {/* Fallback emoji when no image */}
+                        {!tripActivity.activity.photoUrl && (
+                          <div className="absolute inset-0 flex items-center justify-center text-4xl">
                             🏛️
                           </div>
                         )}
-                      </div>
 
-                      {/* Details */}
-                      <div className="flex-1">
-                        <h4
-                          className={`font-medium ${
-                            isDark ? 'text-gray-100' : 'text-gray-900'
-                          }`}
-                        >
-                          {tripActivity.activity.name}
-                          {hasVenueIssue && (
-                            <span
-                              className={`ml-2 text-xs font-normal ${
-                                isDark ? 'text-red-400' : 'text-red-600'
+                        {/* Warning badge */}
+                        {hasVenueIssue && (
+                          <div className="absolute top-3 right-3 z-10">
+                            <div className="px-2 py-1 rounded text-xs font-medium bg-red-500 text-white">
+                              ⚠️ Closed
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Text overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
+                          <h4 className="font-semibold text-lg mb-2 drop-shadow-lg">
+                            {tripActivity.activity.name}
+                          </h4>
+                          <div className="flex items-end justify-between text-sm">
+                            <div className="text-gray-200 drop-shadow">
+                              <div>
+                                {tripActivity.activity.category?.replace(
+                                  /_/g,
+                                  ' '
+                                ) || 'Activity'}
+                              </div>
+                              <div>
+                                {tripActivity.durationMinutes
+                                  ? `${Math.floor(tripActivity.durationMinutes / 60)}h ${tripActivity.durationMinutes % 60}m`
+                                  : 'Duration TBD'}
+                              </div>
+                            </div>
+
+                            <div
+                              className={`bg-gray-800/80 px-2 py-1 rounded text-xs font-medium drop-shadow text-right ${
+                                hasVenueIssue ? 'text-red-300' : 'text-blue-300'
                               }`}
                             >
-                              (Venue Closed!)
-                            </span>
-                          )}
-                        </h4>
-                        <p
-                          className={`text-sm mt-1 ${
-                            isDark ? 'text-gray-400' : 'text-gray-600'
-                          }`}
-                        >
-                          {tripActivity.activity.category?.replace(/_/g, ' ') ||
-                            'Activity'}{' '}
-                          •
-                          {tripActivity.durationMinutes
-                            ? ` ${Math.floor(tripActivity.durationMinutes / 60)}h ${tripActivity.durationMinutes % 60}m`
-                            : ' Duration TBD'}
-                        </p>
+                              <div>
+                                <TimezoneDisplay
+                                  timezone={tripActivity.timezone || 'UTC'}
+                                  date={tripActivity.plannedDate}
+                                  time={tripActivity.startTime}
+                                  className=""
+                                />
+                              </div>
+                              <div>
+                                {formatEndTime(
+                                  tripActivity.startTime,
+                                  tripActivity.durationMinutes || 0
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="p-4 space-y-3">
+                        {/* Address */}
                         {tripActivity.activity.address && (
                           <p
-                            className={`text-xs mt-1 ${
-                              isDark ? 'text-gray-500' : 'text-gray-500'
+                            className={`text-sm flex items-start ${
+                              isDark ? 'text-gray-400' : 'text-gray-600'
                             }`}
                           >
-                            📍 {tripActivity.activity.address}
+                            <span className="mr-2">📍</span>
+                            <span className="flex-1">
+                              {tripActivity.activity.address}
+                            </span>
                           </p>
                         )}
 
                         {/* Venue hours warning */}
                         {hasVenueIssue && venueCheck.message && (
                           <div
-                            className={`mt-2 p-2 border rounded ${
+                            className={`p-3 border rounded-lg ${
                               isDark
                                 ? 'bg-red-900/20 border-red-800/50'
                                 : 'bg-red-50 border-red-200'
@@ -627,7 +846,7 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                                 isDark ? 'text-red-400' : 'text-red-700'
                               }`}
                             >
-                              <span className="font-medium">Warning:</span>{' '}
+                              <span className="font-medium">⚠️ Warning:</span>{' '}
                               {venueCheck.message}
                             </p>
                           </div>
@@ -635,7 +854,7 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
 
                         {tripActivity.notes && (
                           <div
-                            className={`mt-2 p-2 border rounded ${
+                            className={`p-3 border rounded-lg ${
                               isDark
                                 ? 'bg-yellow-900/20 border-yellow-700/50'
                                 : 'bg-yellow-50 border-yellow-200'
@@ -646,45 +865,50 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                                 isDark ? 'text-yellow-300' : 'text-gray-700'
                               }`}
                             >
-                              <span className="font-medium">Note:</span>{' '}
+                              <span className="font-medium">💡 Note:</span>{' '}
                               {tripActivity.notes}
                             </p>
                           </div>
                         )}
-                      </div>
 
-                      {/* Cost and Actions */}
-                      <div className="text-right space-y-2">
-                        <div>
-                          <p
-                            className={`text-sm font-medium ${
-                              isDark ? 'text-gray-100' : 'text-gray-900'
-                            }`}
-                          >
-                            ${tripActivity.activity.estimatedCost || 0}
-                          </p>
-                          {tripActivity.activity.rating && (
-                            <p
-                              className={`text-xs ${
-                                isDark ? 'text-gray-400' : 'text-gray-600'
-                              }`}
-                            >
-                              ⭐ {tripActivity.activity.rating.toFixed(1)}
-                            </p>
-                          )}
+                        {/* Cost, Rating and Actions */}
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <span className="text-lg">💰</span>
+                              <span
+                                className={`text-lg font-semibold ${
+                                  isDark ? 'text-gray-100' : 'text-gray-900'
+                                }`}
+                              >
+                                ${tripActivity.activity.estimatedCost || 0}
+                              </span>
+                            </div>
+                            {tripActivity.activity.rating && (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-lg">⭐</span>
+                                <span
+                                  className={`text-sm font-medium ${
+                                    isDark ? 'text-gray-300' : 'text-gray-700'
+                                  }`}
+                                >
+                                  {tripActivity.activity.rating.toFixed(1)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex space-x-1">
+                        <div className="flex space-x-2 pt-1">
                           <button
                             type="button"
                             onClick={() => handleEdit(tripActivity)}
-                            className={`px-3 py-1 text-xs border rounded transition-colors ${
+                            className={`flex-1 py-2 px-4 text-sm font-medium border rounded-lg transition-colors ${
                               isDark
-                                ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-800/30 hover:text-blue-300 border-blue-700/50'
-                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border-blue-200'
+                                ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-800/40 border-blue-700/50'
+                                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200'
                             }`}
-                            title="Edit activity"
                           >
                             Edit
                           </button>
@@ -692,12 +916,11 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                             type="button"
                             onClick={() => handleDelete(tripActivity)}
                             disabled={deleteMutation.isPending}
-                            className={`px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                            className={`flex-1 py-2 px-4 text-sm font-medium border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                               isDark
-                                ? 'bg-red-900/30 text-red-400 hover:bg-red-800/30 hover:text-red-300 border-red-700/50'
-                                : 'bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border-red-200'
+                                ? 'bg-red-900/30 text-red-400 hover:bg-red-800/40 border-red-700/50'
+                                : 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
                             }`}
-                            title="Remove activity"
                           >
                             {deleteMutation.isPending
                               ? 'Removing...'
@@ -706,9 +929,9 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         );
@@ -789,7 +1012,8 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                     </span>
                   </h4>
 
-                  <div className="space-y-3">
+                  {/* Desktop/tablet view for invalid activities */}
+                  <div className="hidden md:block space-y-3">
                     {dayActivities.map((tripActivity) => (
                       <div
                         key={tripActivity.id}
@@ -902,6 +1126,204 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                                 isDark
                                   ? 'bg-red-900/30 text-red-400 hover:bg-red-800/30 border-red-700/50'
                                   : 'bg-red-100 text-red-700 hover:bg-red-200 border-red-200'
+                              }`}
+                            >
+                              {deleteMutation.isPending
+                                ? 'Removing...'
+                                : 'Delete'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mobile view for invalid activities - same clean approach */}
+                  <div className="block md:hidden space-y-4">
+                    {dayActivities.map((tripActivity) => (
+                      <div
+                        key={tripActivity.id}
+                        className={`rounded-lg overflow-hidden shadow-sm ${
+                          isDark
+                            ? 'bg-gray-800 border border-red-700/70'
+                            : 'bg-white border border-red-300'
+                        }`}
+                      >
+                        {/* Header Image with Text Overlay */}
+                        <div
+                          className={`relative h-32 ${
+                            isDark ? 'bg-gray-900' : 'bg-gray-200'
+                          }`}
+                          style={{
+                            backgroundImage: tripActivity.activity.photoUrl
+                              ? `url(${tripActivity.activity.photoUrl})`
+                              : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                          }}
+                        >
+                          {/* Fallback emoji when no image */}
+                          {!tripActivity.activity.photoUrl && (
+                            <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-75">
+                              🏛️
+                            </div>
+                          )}
+
+                          {/* Warning badge */}
+                          <div className="absolute top-3 right-3 z-10">
+                            <div className="px-2 py-1 rounded text-xs font-medium bg-red-500 text-white">
+                              ⚠️ Outside Dates
+                            </div>
+                          </div>
+
+                          {/* Text overlay */}
+                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
+                            {/* Dark gradient overlay for better text readability */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
+
+                            <div className="relative z-10">
+                              <h5 className="font-semibold text-lg mb-2 drop-shadow-lg">
+                                {tripActivity.activity.name}
+                              </h5>
+                              <div className="flex items-end justify-between text-sm">
+                                <div className="text-gray-200 drop-shadow">
+                                  <div>
+                                    {tripActivity.activity.category?.replace(
+                                      /_/g,
+                                      ' '
+                                    ) || 'Activity'}
+                                  </div>
+                                  <div>
+                                    {tripActivity.durationMinutes
+                                      ? `${Math.floor(tripActivity.durationMinutes / 60)}h ${tripActivity.durationMinutes % 60}m`
+                                      : 'Duration TBD'}
+                                  </div>
+                                </div>
+                                <div className="font-medium text-right text-red-300">
+                                  <div className="bg-gray-800/80 px-2 py-1 rounded text-xs">
+                                    <div>
+                                      <TimezoneDisplay
+                                        timezone={
+                                          tripActivity.timezone || 'UTC'
+                                        }
+                                        date={tripActivity.plannedDate}
+                                        time={tripActivity.startTime}
+                                        className=""
+                                      />
+                                    </div>
+                                    <div>
+                                      {formatEndTime(
+                                        tripActivity.startTime,
+                                        tripActivity.durationMinutes || 0
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-4 space-y-3">
+                          {/* Address */}
+                          {tripActivity.activity.address && (
+                            <p
+                              className={`text-sm flex items-start ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}
+                            >
+                              <span className="mr-2">📍</span>
+                              <span className="flex-1">
+                                {tripActivity.activity.address}
+                              </span>
+                            </p>
+                          )}
+
+                          <div
+                            className={`p-3 border rounded-lg ${
+                              isDark
+                                ? 'bg-red-900/20 border-red-800/50'
+                                : 'bg-red-50 border-red-200'
+                            }`}
+                          >
+                            <p
+                              className={`text-sm ${
+                                isDark ? 'text-red-400' : 'text-red-700'
+                              }`}
+                            >
+                              <span className="font-medium">⚠️ Warning:</span>{' '}
+                              This activity is scheduled outside your trip dates
+                            </p>
+                          </div>
+
+                          {tripActivity.notes && (
+                            <div
+                              className={`p-3 border rounded-lg ${
+                                isDark
+                                  ? 'bg-yellow-900/20 border-yellow-700/50'
+                                  : 'bg-yellow-50 border-yellow-200'
+                              }`}
+                            >
+                              <p
+                                className={`text-sm ${
+                                  isDark ? 'text-yellow-300' : 'text-gray-700'
+                                }`}
+                              >
+                                <span className="font-medium">💡 Note:</span>{' '}
+                                {tripActivity.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Cost, Rating and Actions */}
+                          <div className="flex items-center justify-between pt-2">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-1">
+                                <span className="text-lg">💰</span>
+                                <span
+                                  className={`text-lg font-semibold ${
+                                    isDark ? 'text-gray-100' : 'text-gray-900'
+                                  }`}
+                                >
+                                  ${tripActivity.activity.estimatedCost || 0}
+                                </span>
+                              </div>
+                              {tripActivity.activity.rating && (
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-lg">⭐</span>
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}
+                                  >
+                                    {tripActivity.activity.rating.toFixed(1)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex space-x-2 pt-1">
+                            <button
+                              onClick={() => handleEdit(tripActivity)}
+                              className={`flex-1 py-2 px-4 text-sm font-medium border rounded-lg transition-colors ${
+                                isDark
+                                  ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-800/40 border-blue-700/50'
+                                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200'
+                              }`}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(tripActivity)}
+                              disabled={deleteMutation.isPending}
+                              className={`flex-1 py-2 px-4 text-sm font-medium border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                                isDark
+                                  ? 'bg-red-900/30 text-red-400 hover:bg-red-800/40 border-red-700/50'
+                                  : 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
                               }`}
                             >
                               {deleteMutation.isPending

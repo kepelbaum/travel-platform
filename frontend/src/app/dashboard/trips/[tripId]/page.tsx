@@ -230,53 +230,54 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
 
           {/* Tab navigation */}
           <div className="mb-4 sm:mb-6">
-            <div
-              className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
-            >
-              <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
-                <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`py-2 px-2 sm:px-1 whitespace-nowrap border-b-2 font-medium text-xs sm:text-sm transition-colors ${
-                    activeTab === 'overview'
-                      ? 'border-blue-500 text-blue-600'
-                      : isDark
-                        ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  📋 Overview
-                </button>
-                <button
-                  onClick={() => setActiveTab('timeline')}
-                  className={`py-2 px-2 sm:px-1 whitespace-nowrap border-b-2 font-medium text-xs sm:text-sm transition-colors ${
-                    activeTab === 'timeline'
-                      ? 'border-blue-500 text-blue-600'
-                      : isDark
-                        ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  📅 Timeline
-                </button>
-                <button
-                  onClick={() => {
-                    // Fixed: Check if destinations exist before accessing
-                    if (trip.destinations && trip.destinations.length > 0) {
-                      setSelectedDestinationId(trip.destinations[0].id);
-                    }
-                    setActiveTab('activities');
-                  }}
-                  className={`py-2 px-2 sm:px-1 whitespace-nowrap border-b-2 font-medium text-xs sm:text-sm transition-colors ${
-                    activeTab === 'activities'
-                      ? 'border-blue-500 text-blue-600'
-                      : isDark
-                        ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  🎯 Activities
-                </button>
-              </nav>
+            <div className="flex space-x-1 p-1 bg-gray-800 rounded-lg">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`flex-1 py-2 px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'overview'
+                    ? isDark
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-blue-600 text-white shadow-lg'
+                    : isDark
+                      ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                📋 Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('timeline')}
+                className={`flex-1 py-2 px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'timeline'
+                    ? isDark
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-blue-600 text-white shadow-lg'
+                    : isDark
+                      ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                📅 Timeline
+              </button>
+              <button
+                onClick={() => {
+                  if (trip.destinations && trip.destinations.length > 0) {
+                    setSelectedDestinationId(trip.destinations[0].id);
+                  }
+                  setActiveTab('activities');
+                }}
+                className={`flex-1 py-2 px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'activities'
+                    ? isDark
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-blue-600 text-white shadow-lg'
+                    : isDark
+                      ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                🎯 Activities
+              </button>
             </div>
           </div>
 

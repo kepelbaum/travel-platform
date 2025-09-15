@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Activity } from '@/types';
 import ActivityScheduleForm from '../forms/ActivityScheduleForm';
+import { useThemeStore } from '@/store/theme';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -29,6 +30,7 @@ export default function ActivityCard({
   tripId,
   onShowDetails,
 }: ActivityCardProps) {
+  const { isDark } = useThemeStore();
   const [showScheduleForm, setShowScheduleForm] = useState(false);
 
   const formatDuration = (minutes?: number) => {
@@ -131,7 +133,11 @@ export default function ActivityCard({
   return (
     <>
       <div
-        className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow h-[440px] flex flex-col cursor-pointer"
+        className={`rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow h-[440px] flex flex-col cursor-pointer ${
+          isDark
+            ? 'bg-gray-800 border border-gray-700 shadow-purple-500/25'
+            : 'bg-white border border-gray-200 shadow-gray-400/20'
+        }`}
         onClick={() => onShowDetails?.(activity)}
       >
         {/* Image */}
@@ -144,7 +150,11 @@ export default function ActivityCard({
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <div
+              className={`w-full h-full flex items-center justify-center ${
+                isDark ? 'bg-gray-700' : 'bg-gray-200'
+              }`}
+            >
               <span className="text-4xl">
                 {getCategoryIcon(activity.category)}
               </span>
@@ -153,9 +163,13 @@ export default function ActivityCard({
 
           {/* Rating badge - single line format */}
           {activity.rating && (
-            <div className="absolute top-3 right-3 bg-white bg-opacity-95 rounded-full px-2 py-1 text-sm font-semibold shadow-sm">
+            <div
+              className={`absolute top-3 right-3 bg-opacity-95 rounded-full px-2 py-1 text-sm font-semibold shadow-sm ${
+                isDark ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'
+              }`}
+            >
               ⭐ {activity.rating.toFixed(1)}{' '}
-              <span className="text-gray-500">
+              <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
                 {formatRatingCount(activity.userRatingsTotal)}
               </span>
             </div>
@@ -173,7 +187,9 @@ export default function ActivityCard({
           {/* Title - flexible height with better handling */}
           <div className="mb-3">
             <h3
-              className="font-semibold text-base text-gray-900 leading-tight"
+              className={`font-semibold text-base leading-tight ${
+                isDark ? 'text-gray-100' : 'text-gray-900'
+              }`}
               title={activity.name}
             >
               {truncateTitle(activity.name)}
@@ -183,7 +199,11 @@ export default function ActivityCard({
           {/* Description - flexible height */}
           <div className="mb-3 flex-1 min-h-[2.5rem]">
             {activity.description && (
-              <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
+              <p
+                className={`text-sm leading-relaxed line-clamp-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}
+              >
                 {activity.description}
               </p>
             )}
@@ -191,11 +211,19 @@ export default function ActivityCard({
 
           {/* Stats row */}
           <div className="mb-3 flex items-center justify-between text-sm">
-            <div className="flex items-center text-gray-600">
+            <div
+              className={`flex items-center ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}
+            >
               <span className="mr-1">⏱️</span>
               <span>{formatDuration(activity.durationMinutes)}</span>
             </div>
-            <div className="flex items-center text-gray-600">
+            <div
+              className={`flex items-center ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}
+            >
               <span className="mr-1">💰</span>
               <span>
                 {activity.estimatedCost ? `$${activity.estimatedCost}` : 'Free'}
@@ -204,7 +232,7 @@ export default function ActivityCard({
           </div>
 
           {/* Location info - clickable address */}
-          <div className="mb-4 text-xs text-gray-500">
+          <div className="mb-4 text-xs">
             {activity.address && (
               <button
                 onClick={(e) => {
@@ -214,7 +242,11 @@ export default function ActivityCard({
                     : `https://www.google.com/maps/search/${encodeURIComponent(activity.address || '')}`;
                   window.open(mapsUrl, '_blank');
                 }}
-                className="flex items-start text-left hover:text-blue-600 transition-colors w-full"
+                className={`flex items-start text-left transition-colors w-full ${
+                  isDark
+                    ? 'text-gray-500 hover:text-blue-400'
+                    : 'text-gray-500 hover:text-blue-600'
+                }`}
                 title="Open in Google Maps"
               >
                 <span className="mr-1 mt-0.5">📍</span>
