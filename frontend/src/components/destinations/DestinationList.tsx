@@ -29,7 +29,7 @@ export default function DestinationList() {
 
     const query = searchQuery.toLowerCase();
     return allDestinations.filter((destination) =>
-      destination.name.toLowerCase().includes(query)
+      destination.name.toLowerCase().startsWith(query)
     );
   }, [allDestinations, searchQuery]);
 

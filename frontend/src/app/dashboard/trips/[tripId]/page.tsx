@@ -230,17 +230,19 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
 
           {/* Tab navigation */}
           <div className="mb-4 sm:mb-6">
-            <div className="flex space-x-1 p-1 bg-gray-800 rounded-lg">
+            <div
+              className={`flex space-x-1 p-1 rounded-lg ${
+                isDark ? 'bg-gray-800' : 'bg-gray-100'
+              }`}
+            >
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`flex-1 py-2 px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                   activeTab === 'overview'
-                    ? isDark
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-lg'
                     : isDark
                       ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-white hover:shadow-sm'
                 }`}
               >
                 📋 Overview
@@ -249,12 +251,10 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                 onClick={() => setActiveTab('timeline')}
                 className={`flex-1 py-2 px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                   activeTab === 'timeline'
-                    ? isDark
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-lg'
                     : isDark
                       ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-white hover:shadow-sm'
                 }`}
               >
                 📅 Timeline
@@ -268,12 +268,10 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
                 }}
                 className={`flex-1 py-2 px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                   activeTab === 'activities'
-                    ? isDark
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-lg'
                     : isDark
                       ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-white hover:shadow-sm'
                 }`}
               >
                 🎯 Activities
