@@ -124,38 +124,43 @@ export function DestinationCard({ destination }: { destination: Destination }) {
             </a>
           )}
 
-          {activeTrip ? (
-            <button
-              onClick={handleTripAction}
-              disabled={isLoading}
-              className={`w-full px-4 py-2 border border-transparent rounded-md text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer ${
-                isInTrip
-                  ? 'text-white bg-red-500 hover:bg-red-700 border-red-800'
-                  : 'text-white bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent mr-2"></div>
-                  {isInTrip ? 'Removing...' : 'Adding...'}
-                </span>
-              ) : isInTrip ? (
-                'Remove'
+          {/* Only show trip actions if user is logged in */}
+          {user && (
+            <>
+              {activeTrip ? (
+                <button
+                  onClick={handleTripAction}
+                  disabled={isLoading}
+                  className={`w-full px-4 py-2 border border-transparent rounded-md text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer ${
+                    isInTrip
+                      ? 'text-white bg-red-500 hover:bg-red-700 border-red-800'
+                      : 'text-white bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent mr-2"></div>
+                      {isInTrip ? 'Removing...' : 'Adding...'}
+                    </span>
+                  ) : isInTrip ? (
+                    'Remove'
+                  ) : (
+                    'Add to Trip'
+                  )}
+                </button>
               ) : (
-                'Add to Trip'
+                <Link
+                  href="/dashboard"
+                  className={`block w-full px-4 py-2 text-center text-sm border rounded-md transition-colors cursor-pointer ${
+                    isDark
+                      ? 'text-gray-400 hover:text-gray-300 border-gray-600 hover:border-gray-500'
+                      : 'text-gray-500 hover:text-gray-700 border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Select a trip to add to
+                </Link>
               )}
-            </button>
-          ) : (
-            <Link
-              href="/dashboard"
-              className={`block w-full px-4 py-2 text-center text-sm border rounded-md transition-colors cursor-pointer ${
-                isDark
-                  ? 'text-gray-400 hover:text-gray-300 border-gray-600 hover:border-gray-500'
-                  : 'text-gray-500 hover:text-gray-700 border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              Select a trip to add to
-            </Link>
+            </>
           )}
         </div>
       </div>
