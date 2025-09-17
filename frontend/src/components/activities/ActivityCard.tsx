@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Activity } from '@/types';
 import ActivityScheduleForm from '../forms/ActivityScheduleForm';
 import { useThemeStore } from '@/store/theme';
+import Image from 'next/image';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -143,11 +144,13 @@ export default function ActivityCard({
         {/* Image */}
         <div className="relative h-44 flex-shrink-0">
           {activity.photoUrl ? (
-            <img
+            <Image
               src={activity.photoUrl}
               alt={activity.name}
+              width={400}
+              height={176}
               className="w-full h-full object-cover"
-              loading="lazy"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
           ) : (
             <div

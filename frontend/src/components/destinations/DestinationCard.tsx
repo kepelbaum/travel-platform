@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi } from '@/lib/api';
 import Link from 'next/link';
 import { useThemeStore } from '@/store/theme';
+import Image from 'next/image';
 
 export function DestinationCard({ destination }: { destination: Destination }) {
   const { user } = useAuthStore();
@@ -73,13 +74,11 @@ export function DestinationCard({ destination }: { destination: Destination }) {
       <div className="h-48 relative flex-shrink-0">
         {destination.imageUrl ? (
           <div className="relative w-full h-full">
-            <img
+            <Image
               src={destination.imageUrl}
               alt={destination.name}
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) =>
-                console.log(`Image failed to load for ${destination.name}:`, e)
-              }
+              fill
+              className="object-cover"
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
               <div className="text-white">

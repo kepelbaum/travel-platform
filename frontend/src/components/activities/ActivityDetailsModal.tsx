@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Activity } from '@/types';
 import { useThemeStore } from '@/store/theme';
+import Image from 'next/image';
 
 interface ActivityDetailsModalProps {
   activity: Activity & {
@@ -243,9 +244,11 @@ export default function ActivityDetailsModal({
         {/* Header with image */}
         <div className="relative">
           {activity.photoUrl ? (
-            <img
+            <Image
               src={activity.photoUrl}
               alt={activity.name}
+              width={800}
+              height={256}
               className="w-full h-64 object-cover rounded-t-lg"
             />
           ) : (
@@ -537,7 +540,11 @@ export default function ActivityDetailsModal({
                   </span>
                   <select
                     value={reviewFilter}
-                    onChange={(e) => setReviewFilter(e.target.value as any)}
+                    onChange={(e) =>
+                      setReviewFilter(
+                        e.target.value as 'all' | '5' | '4' | '3' | '2' | '1'
+                      )
+                    }
                     className={`text-sm border rounded px-2 py-1 ${
                       isDark
                         ? 'bg-gray-700 border-gray-600 text-white'

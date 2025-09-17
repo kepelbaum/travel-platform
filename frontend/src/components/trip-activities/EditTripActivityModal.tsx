@@ -10,6 +10,13 @@ interface EditTripActivityModalProps {
   onCancel: () => void;
 }
 
+interface TripActivityUpdate {
+  plannedDate?: string;
+  startTime?: string;
+  durationMinutes?: number;
+  notes?: string;
+}
+
 export function EditTripActivityModal({
   tripActivity,
   onSave,
@@ -26,7 +33,7 @@ export function EditTripActivityModal({
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: (updates: any) =>
+    mutationFn: (updates: TripActivityUpdate) =>
       tripActivitiesApi.updateScheduledActivity(tripActivity.id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip-activities'] });

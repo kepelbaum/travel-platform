@@ -48,7 +48,10 @@ export default function ActivityBrowser({
     enabled: !!destinationId && destinationId !== undefined,
   });
 
-  const allActivities = ActivitiesResponse?.activities || [];
+  // Memoize activities array to prevent recreation on every render
+  const allActivities = useMemo(() => {
+    return ActivitiesResponse?.activities || [];
+  }, [ActivitiesResponse?.activities]);
 
   // Frontend filtering and pagination
   const processedActivities = useMemo(() => {

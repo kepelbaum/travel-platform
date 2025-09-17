@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { useThemeStore } from '@/store/theme';
 import { tripsApi } from '@/lib/api';
-import { Trip } from '@/types';
+import { Trip, Destination } from '@/types';
 import { useState, use } from 'react';
 import Link from 'next/link';
 import { DestinationMiniCard } from '@/components/destinations/DestinationMiniCard';
@@ -127,7 +127,7 @@ export default function TripDetailsPage({ params }: TripDetailsPageProps) {
     }
   };
 
-  const getDestinationImage = (destination: any) => {
+  const getDestinationImage = (destination: Destination) => {
     return destination.imageUrl || null;
   };
 

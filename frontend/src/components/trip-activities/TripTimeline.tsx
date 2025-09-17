@@ -7,6 +7,7 @@ import { tripActivitiesApi } from '@/lib/api';
 import { EditTripActivityModal } from '@/components/trip-activities/EditTripActivityModal';
 import { Trip } from '@/types';
 import { useThemeStore } from '@/store/theme';
+import Image from 'next/image';
 
 interface TripTimelineProps {
   tripId: number;
@@ -558,9 +559,11 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                         {/* Photo */}
                         <div className="flex-shrink-0">
                           {tripActivity.activity.photoUrl ? (
-                            <img
+                            <Image
                               src={tripActivity.activity.photoUrl}
                               alt={tripActivity.activity.name}
+                              width={64}
+                              height={64}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                           ) : (
@@ -1042,9 +1045,11 @@ export default function TripTimeline({ tripId, trip }: TripTimelineProps) {
                         <div className="flex-1 flex items-start space-x-4">
                           <div className="flex-shrink-0">
                             {tripActivity.activity.photoUrl ? (
-                              <img
+                              <Image
                                 src={tripActivity.activity.photoUrl}
                                 alt={tripActivity.activity.name}
+                                width={48}
+                                height={48}
                                 className="w-12 h-12 rounded-lg object-cover opacity-75"
                               />
                             ) : (

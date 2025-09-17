@@ -5,6 +5,7 @@ import { Activity } from '@/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripActivitiesApi } from '@/lib/api';
 import { useThemeStore } from '@/store/theme';
+import Image from 'next/image';
 
 interface ActivityScheduleFormProps {
   activity: Activity;
@@ -108,9 +109,11 @@ export default function ActivityScheduleForm({
         >
           <div className="flex items-center space-x-3">
             {activity.photoUrl ? (
-              <img
+              <Image
                 src={activity.photoUrl}
                 alt={activity.name}
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded object-cover"
               />
             ) : (

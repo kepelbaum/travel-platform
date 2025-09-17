@@ -52,7 +52,13 @@ export default function TripForm({
 
   const createMutation = useMutation({
     mutationFn: (data: TripFormData) =>
-      tripsApi.createTrip(data, user?.id || 0),
+      tripsApi.createTrip(
+        {
+          ...data,
+          budget: data.budget || 0,
+        },
+        user?.id || 0
+      ),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: ['trip', tripId] });
       queryClient.invalidateQueries({ queryKey: ['trips'] });
@@ -66,7 +72,11 @@ export default function TripForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
       queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
-      onSuccess?.() || router.push(`/dashboard/trips/${tripId}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/dashboard/trips/${tripId}`);
+      }
     },
   });
 

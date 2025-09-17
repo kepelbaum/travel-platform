@@ -1,4 +1,5 @@
 import { Destination } from '@/types';
+import Image from 'next/image';
 
 interface DestinationMiniCardProps {
   destination: Destination;
@@ -29,17 +30,11 @@ export function DestinationMiniCard({
     <div className="relative border border-gray-200 rounded-lg overflow-hidden group hover:shadow-md transition-shadow h-32">
       {backgroundImage ? (
         <div className="relative w-full h-full">
-          <img
+          <Image
             src={backgroundImage}
             alt={destination.name}
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              // Fallback to gradient if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              target.parentElement!.innerHTML =
-                '<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600" />';
-            }}
+            fill
+            className="object-cover"
           />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
             <div className="text-white">

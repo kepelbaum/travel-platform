@@ -38,12 +38,12 @@ const createApiClient = (baseURL: string) => {
 
   return {
     get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
-    post: <T>(endpoint: string, data: any) =>
+    post: <T>(endpoint: string, data: unknown) =>
       request<T>(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    put: <T>(endpoint: string, data: any) =>
+    put: <T>(endpoint: string, data: unknown) =>
       request<T>(endpoint, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -53,6 +53,22 @@ const createApiClient = (baseURL: string) => {
 };
 
 export const apiClient = createApiClient(API_BASE_URL);
+
+interface CreateTripData {
+  name: string;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  status?: 'draft' | 'planned' | 'active' | 'completed';
+}
+
+interface UpdateTripData {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  status?: 'draft' | 'planned' | 'active' | 'completed';
+}
 
 export const authApi = {
   login: (credentials: { email: string; password: string }) =>
@@ -66,9 +82,9 @@ export const tripsApi = {
     apiClient.get<Trip[]>(`/trips?userId=${userId}`),
   getTripById: (tripId: number, userId: number) =>
     apiClient.get<Trip>(`/trips/${tripId}?userId=${userId}`),
-  createTrip: (tripData: any, userId: number) =>
+  createTrip: (tripData: CreateTripData, userId: number) =>
     apiClient.post<Trip>(`/trips?userId=${userId}`, tripData),
-  updateTrip: (tripId: number, tripData: any, userId: number) =>
+  updateTrip: (tripId: number, tripData: UpdateTripData, userId: number) =>
     apiClient.put<Trip>(`/trips/${tripId}?userId=${userId}`, tripData),
   deleteTrip: (tripId: number, userId: number) =>
     apiClient.delete<void>(`/trips/${tripId}?userId=${userId}`),
@@ -157,7 +173,12 @@ export const activitiesApi = {
 
   // Get cache stats
   getCacheStats: (destinationId: number) =>
-    apiClient.get<any>(`/activities/destination/${destinationId}/cache-stats`),
+    apiClient.get<{
+      totalActivities: number;
+      lastRefresh: string;
+      isCacheStale: boolean;
+      cacheTtlDays: number;
+    }>(`/activities/destination/${destinationId}/cache-stats`),
 
   // Get all categories
   getCategories: () => apiClient.get<string[]>('/activities/categories'),
