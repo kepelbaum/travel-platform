@@ -7,7 +7,6 @@ import org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoC
 @SpringBootApplication(exclude = {
     SystemMetricsAutoConfiguration.class
 })
-@SpringBootApplication
 public class TravelPlatformApplication {
 
     public static void main(String[] args) {
