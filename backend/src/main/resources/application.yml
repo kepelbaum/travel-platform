@@ -39,3 +39,11 @@ google:
   places:
     api:
       key: ${GOOGLE_PLACES_API_KEY:default-key}
+
+management:
+  metrics:
+    binders:
+      processor:
+        enabled: false
+      system:
+        enabled: false
