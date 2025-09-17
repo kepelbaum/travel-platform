@@ -42,7 +42,7 @@ export function DeleteTripModal({
             isDark ? 'text-gray-400' : 'text-gray-500'
           }`}
         >
-          Are you sure you want to delete "{trip.name}"? This action cannot be
+          Are you sure you want to delete '{trip.name}'? This action cannot be
           undone.
         </p>
 
