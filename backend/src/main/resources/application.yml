@@ -47,3 +47,5 @@ management:
         enabled: false
       system:
         enabled: false
+        process: false
+        jvm: true
