@@ -120,7 +120,7 @@ public class ActivityService {
 
         try {
             // Fetch fresh data from Google Places
-            List<Activity> newActivities = googlePlacesService.searchActivitiesForDestination(destinationId, null);
+            List<Activity> newActivities = fetchFromGooglePlaces(destinationId, null, null);
 
             if (newActivities.isEmpty()) {
                 logger.warn("Google Places API returned no activities for destination: {}", destinationId);
