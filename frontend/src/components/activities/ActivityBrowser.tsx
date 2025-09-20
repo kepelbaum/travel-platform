@@ -323,12 +323,13 @@ export default function ActivityBrowser({
             {totalCount} total activities • Page {currentPage} of {totalPages}
           </p>
         </div>
-        <button
+        {/* Force Refresh button - for testing/debugging only */}
+        {/* <button
           onClick={handleForceRefresh}
           className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
         >
           🔄 Refresh
-        </button>
+        </button> */}
       </div>
 
       {/* Search and filter */}

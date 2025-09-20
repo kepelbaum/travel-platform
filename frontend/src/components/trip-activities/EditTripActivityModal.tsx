@@ -258,7 +258,18 @@ export function EditTripActivityModal({
                   : 'bg-red-100 border-red-400 text-red-700'
               }`}
             >
-              Failed to update activity. Please try again.
+              {(() => {
+                const error = updateMutation.error as any;
+                const message = error?.message || '';
+
+                if (message.includes('409')) {
+                  return 'Another activity is already scheduled during this time.';
+                } else if (message.includes('400')) {
+                  return 'Check that the date falls within your trip dates.';
+                } else {
+                  return 'Failed to update activity. Please try again.';
+                }
+              })()}
             </div>
           )}
 
