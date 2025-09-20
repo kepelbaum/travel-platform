@@ -248,8 +248,20 @@ public class ActivityService {
                 if (activity.getPlaceId() != null && processedInBatch.contains(activity.getPlaceId())) {
                     continue;
                 }
+                // Check for existing activity by name first (more reliable)
+                Optional<Activity> existingByName = activity.getName() != null
+                        ? activityRepository.findByDestinationIdAndNameIgnoreCase(destinationId, activity.getName())
+                        : Optional.empty();
 
-                // Check for existing activity (atomic within transaction)
+                if (existingByName.isPresent()) {
+                    Activity existingActivity = existingByName.get();
+                    updateActivityWithNewData(existingActivity, activity);
+                    savedActivities.add(activityRepository.save(existingActivity));
+                    updatedCount++;
+                    continue; // Skip place ID check
+                }
+
+                // Only check place ID if name check didn't find duplicate
                 Optional<Activity> existingByPlaceId = activity.getPlaceId() != null
                         ? activityRepository.findByPlaceId(activity.getPlaceId())
                         : Optional.empty();
@@ -260,21 +272,9 @@ public class ActivityService {
                     savedActivities.add(activityRepository.save(existingActivity));
                     updatedCount++;
                 } else {
-                    // Fallback name check for same destination
-                    Optional<Activity> existingByName = activity.getName() != null
-                            ? activityRepository.findByDestinationIdAndNameIgnoreCase(destinationId, activity.getName())
-                            : Optional.empty();
-
-                    if (existingByName.isPresent()) {
-                        Activity existingActivity = existingByName.get();
-                        updateActivityWithNewData(existingActivity, activity);
-                        savedActivities.add(activityRepository.save(existingActivity));
-                        updatedCount++;
-                    } else {
-                        Activity saved = activityRepository.save(activity);
-                        savedActivities.add(saved);
-                        newCount++;
-                    }
+                    Activity saved = activityRepository.save(activity);
+                    savedActivities.add(saved);
+                    newCount++;
                 }
 
                 // Track processed place IDs
