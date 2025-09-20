@@ -23,6 +23,12 @@ export default function LoginPage() {
           >
             Sign in to continue your void wandering journey...
           </p>
+          {/* Demo credentials */}
+          <p
+            className={`text-sm mt-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+          >
+            (Demo: john1@example.com / password123)
+          </p>
         </div>
 
         <div

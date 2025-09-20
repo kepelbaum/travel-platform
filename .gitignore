@@ -148,3 +148,7 @@ backend/build/
 *.jar
 *.war
 *.ear
+
+# Maven build artifacts
+**/target/
+target/
