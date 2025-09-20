@@ -303,13 +303,20 @@ export default function ActivityScheduleForm({
 
           {scheduleActivity.error && (
             <div
-              className={`mt-3 p-2 border rounded text-sm ${
-                isDark
-                  ? 'bg-red-900/30 border-red-500/50 text-red-300'
-                  : 'bg-red-50 border-red-200 text-red-600'
-              }`}
+              className={`mt-3 p-2 border rounded text-sm ${isDark ? 'bg-red-900/30 border-red-500/50 text-red-300' : 'bg-red-50 border-red-200 text-red-600'}`}
             >
-              Failed to schedule activity. Please try again.
+              {(() => {
+                const error = scheduleActivity.error as any;
+                const message = error?.message || '';
+
+                if (message.includes('409')) {
+                  return 'Another activity is already scheduled during this time.';
+                } else if (message.includes('400')) {
+                  return 'Check that the date falls within your trip dates.';
+                } else {
+                  return 'Failed to schedule activity. Please try again.';
+                }
+              })()}
             </div>
           )}
         </form>
