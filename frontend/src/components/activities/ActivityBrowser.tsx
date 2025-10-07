@@ -202,8 +202,8 @@ export default function ActivityBrowser({
                     pageNum === currentPage
                       ? 'bg-blue-600 text-white'
                       : isDark
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   {pageNum}
@@ -313,7 +313,9 @@ export default function ActivityBrowser({
       <div className="flex items-center justify-between">
         <div>
           <h2
-            className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+            className={`text-xl font-bold ${
+              isDark ? 'text-gray-100' : 'text-gray-900'
+            }`}
           >
             Activities
           </h2>
@@ -343,13 +345,15 @@ export default function ActivityBrowser({
         <div className="flex items-center mb-3">
           <span className="text-lg mr-2">🔍</span>
           <h3
-            className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+            className={`text-sm font-semibold ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            }`}
           >
             Search & Filter Activities
           </h3>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
             placeholder="Search activities..."
@@ -364,7 +368,7 @@ export default function ActivityBrowser({
           <select
             value={selectedCategory}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className={`px-4 py-2 border-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            className={`px-4 py-2 border-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:w-auto w-full ${
               isDark
                 ? 'bg-gray-700 border-gray-600 text-gray-100'
                 : 'bg-white border-gray-300 text-gray-900'
@@ -382,7 +386,9 @@ export default function ActivityBrowser({
         {/* Quick filters */}
         <div>
           <p
-            className={`text-xs mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+            className={`text-xs mb-2 ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}
           >
             Quick filters:
           </p>
@@ -393,8 +399,8 @@ export default function ActivityBrowser({
                 selectedCategory === 'all'
                   ? 'bg-blue-600 text-white border-blue-600'
                   : isDark
-                    ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-300'
-                    : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                  ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-300'
+                  : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
               }`}
             >
               📋 All
@@ -422,8 +428,8 @@ export default function ActivityBrowser({
                     selectedCategory === cat
                       ? 'bg-blue-600 text-white border-blue-600'
                       : isDark
-                        ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-300'
-                        : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                      ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-300'
+                      : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
                   }`}
                 >
                   {getCategoryIcon(cat)} {cat.replace(/_/g, ' ')}
@@ -477,7 +483,9 @@ export default function ActivityBrowser({
 
       {processedActivities.activities.length === 0 && !isLoading && (
         <div
-          className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+          className={`text-center py-8 ${
+            isDark ? 'text-gray-400' : 'text-gray-500'
+          }`}
         >
           <p>No activities found. Try adjusting your search.</p>
         </div>
